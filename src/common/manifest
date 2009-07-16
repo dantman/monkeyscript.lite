@@ -1,0 +1,6 @@
+Class-Path: ./js.jar
+Main-Class: org.monkeyscript.lite.MonkeyScript
+Implementation-Title: MonkeyScript Lite
+Implementation-Vendor: Daniel Friesen
+Implementation-URL: http://lite.monkeyscript.org
+
