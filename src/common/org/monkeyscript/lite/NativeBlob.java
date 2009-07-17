@@ -59,7 +59,7 @@ final class NativeBlob extends IdScriptableObject {
 	@Override
 	protected Object getInstanceIdValue(int id) {
 		if (id == Id_length) {
-			return ScriptRuntime.wrapInt(bytess.length);
+			return ScriptRuntime.wrapInt(bytes.length);
 		}
 		return super.getInstanceIdValue(id);
 	}
@@ -67,7 +67,7 @@ final class NativeBlob extends IdScriptableObject {
 	@Override
 	protected void fillConstructorProperties(IdFunctionObject ctor) {
 		addIdFunctionProperty(ctor, BLOB_TAG, ConstructorId_byteAt, "byteAt", 2);
-		addIdFunctionProperty(ctor, BLOB_TAG, ConstructorId_charCodeAt, "intAt", 2);
+		addIdFunctionProperty(ctor, BLOB_TAG, ConstructorId_intAt, "intAt", 2);
 		addIdFunctionProperty(ctor, BLOB_TAG, ConstructorId_indexOf, "indexOf", 2);
 		addIdFunctionProperty(ctor, BLOB_TAG, ConstructorId_lastIndexOf, "lastIndexOf", 2);
 		addIdFunctionProperty(ctor, BLOB_TAG, ConstructorId_split, "split", 3);
@@ -100,24 +100,12 @@ final class NativeBlob extends IdScriptableObject {
 	
     @Override
     public Object execIdCall(IdFunctionObject f, Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
-		if (!f.hasTag(STRING_TAG)) {
+		if (!f.hasTag(BLOB_TAG)) {
 			return super.execIdCall(f, cx, scope, thisObj, args);
 		}
 		int id = f.methodId();
 		again:
-			for(;;) {    private static int js_indexOf(String target, Object[] args) {
-        String search = ScriptRuntime.toString(args, 0);
-        double begin = ScriptRuntime.toInteger(args, 1);
-
-        if (begin > target.length()) {
-            return -1;
-        } else {
-            if (begin < 0)
-                begin = 0;
-            return target.indexOf(search, (int)begin);
-        }
-    }
-
+			for(;;) {
 				switch (id) {
 					case ConstructorId_byteAt:
 					case ConstructorId_intAt:
@@ -151,7 +139,7 @@ final class NativeBlob extends IdScriptableObject {
 								}
 								
 							}*/
-							byte[] b = nativeConvert( args[0] );
+							byte[] b = nativeConvert( cx, args[0] );
 							return new NativeBlob(b);
 						} else {
 							return NativeBlob.newEmpty();
@@ -170,7 +158,7 @@ final class NativeBlob extends IdScriptableObject {
 						for (int i = 0; i < bytes.length; i++) {
 							if (i > 0)
 								sb.insert(sb.length()-3, ", ");
-							sb.insert(sb.length()-3, (bytes[i].intValue()-Byte.MIN_VALUE).toString());
+							sb.insert(sb.length()-3, Integer.toString(byteToInt(bytes[i])));
 						}
 						return sb.toString();
 					}
@@ -185,24 +173,23 @@ final class NativeBlob extends IdScriptableObject {
 						}
 						byte b = target[(int)pos];
 						if (id == Id_byteAt) return new NativeBlob(b);
-						else return ScriptRuntime.wrapInt(b.intValue()-Byte.MIN_VALUE);
+						else return ScriptRuntime.wrapInt(byteToInt(b));
 					}
     
 					case Id_indexOf:
 						if ( args.length == 0 )
 							break;
-						byte[] needle = nativeConvert(args[0]);
+						byte[] needle = nativeConvert(cx, args[0]);
 						int offset = 0;
 						if ( args.length > 1 )
-							offset = ScriptRuntime.toInt32( args[1] )-Byte.MIN_VALUE;
+							offset = ScriptRuntime.toInt32( args[1] );
 						return ScriptRuntime.wrapInt(js_indexOf(realThis(thisObj, f).bytes, needle, offset));
 					
 					case Id_lastIndexOf:
 						return ScriptRuntime.wrapInt(js_lastIndexOf(realThis(thisObj, f).bytes, args));
     
 					case Id_split:
-						if (0 <= index && index < bytes.length) {
-							return js_split(cx, scope, realThis(thisObj, f).bytes, args);
+						return js_split(cx, scope, realThis(thisObj, f).bytes, args);
     
 					case Id_concat:
 						return js_concat(realThis(thisObj, f).bytes, args);
@@ -212,7 +199,7 @@ final class NativeBlob extends IdScriptableObject {
     
 					case Id_equals: {
 						boolean eq = false;
-						byte[] b1 = thisObj.bytes;
+						byte[] b1 = realThis(thisObj, f).bytes;
 						byte[] b2;
 						if(args[0] instanceof NativeBlob) {
 							b2 = ((NativeBlob)args[0]).bytes;
@@ -225,39 +212,35 @@ final class NativeBlob extends IdScriptableObject {
 						}
 						return ScriptRuntime.wrapBoolean(eq);
 					}
-				
+				}
 				throw new IllegalArgumentException(String.valueOf(id));
 			}
 	}
 
-	private static NativeBlob realThis(Scriptable thisObj, IdFunctionObject f) {
+	private static NativeBlob realThis(Object thisObj, IdFunctionObject f) {
 		if (!(thisObj instanceof NativeBlob))
 			throw incompatibleCallError(f);
 		return (NativeBlob)thisObj;
 	}
 	
-	private static byte[] nativeConvert(Object o) {
+	private static byte[] nativeConvert(Context cx, Object o) {
 		if(o instanceof NativeBlob)
 			return ((NativeBlob)o).bytes;
 		if(o instanceof NativeNumber) {
-			int ii = ScriptRuntime.toInt32( bo );
-			if ( ii > Byte.MAX_VALUE-Byte.MIN_VALUE )
-				throw ScriptRuntime.typeError("Numeric argument to high to be a byte value");
+			int ii = ScriptRuntime.toInt32( o );
 			byte[] b = new byte[1];
-			b[0] = (byte) ii-Byte.MIN_VALUE;
+			b[0] = intToByte(ii);
 			return b;
 		}
 		if(o instanceof NativeArray) {
 			NativeArray a = (NativeArray) o;
-			byte[] ba = new byte[a.getLength()];
-			for (long i = 0; i < ba.length; i++) {
-				Object bo = NativeArray.getElm(cx, a, i);
+			byte[] ba = new byte[(int)a.getLength()];
+			for (int i = 0; i < ba.length; i++) {
+				Object bo = NativeArray.getElm(cx, (Scriptable)a, (long)i);
 				if (!(bo instanceof NativeNumber))
 					throw ScriptRuntime.typeError("Contents of data array used as argument to blob method was not entirely numbers");
 				int ii = ScriptRuntime.toInt32( bo );
-				if ( ii > Byte.MAX_VALUE-Byte.MIN_VALUE )
-					throw ScriptRuntime.typeError("Numeric argument to high to be a byte value");
-				byte b = (byte) ii-Byte.MIN_VALUE;
+				byte b = intToByte(ii);
 				ba[i] = b;
 			}
 			return ba;
@@ -265,9 +248,26 @@ final class NativeBlob extends IdScriptableObject {
 		throw ScriptRuntime.typeError("Invalid data type used as argument to a blob method");
 	}
 	
+	private static int byteToInt(byte b) {
+		Byte bb = new Byte(b);
+		int bi = bb.intValue();
+		Byte byteMin = new Byte(Byte.MIN_VALUE);
+		int bmin = byteMin.intValue();
+		return bi-bmin;
+	}
+	
+	private static byte intToByte(int i) {
+		int bmax = Byte.MAX_VALUE-Byte.MIN_VALUE;//(new Byte(Byte.MAX_VALUE-Byte.MIN_VALUE)).intValue();
+		int bmin = (new Byte(Byte.MIN_VALUE)).intValue();
+		if ( i > bmax )
+			throw ScriptRuntime.typeError("Integer representation of byte to high.");
+		byte b = (byte)(i+bmin);
+		return b;
+	}
+	
 	@Override
 	public String toString() {
-		return "[Blob length=" + bytes.length.toString() + "]";
+		return "[Blob length=" + bytes.length + "]";
 	}
 	
 	@Override
@@ -297,8 +297,8 @@ final class NativeBlob extends IdScriptableObject {
 			// byte arrays have no indexOf like Strings to
 			// Enter long byte searching code
 			look:
-				for (int a = begin; a < target.length - search.length; a++) {
-					for (int b = 0; b < search.length; b++ ) {
+				for (int a = (int)begin; a < (int)target.length - search.length; a++) {
+					for (int b = 0; b < (int)search.length; b++ ) {
 						if ( target[a+b] != search[b] )
 							continue look; // Not a match, move on
 					}
@@ -318,8 +318,8 @@ final class NativeBlob extends IdScriptableObject {
 			end = 0;
 		
 		look:
-			for (int a = end-search.length; a >= 0; a--) {
-				for (int b = 0; b < search.length; b++ ) {
+			for (int a = (int)(end-search.length); a >= 0; a--) {
+				for (int b = 0; b < (int)search.length; b++ ) {
 					if ( target[a+b] != search[b] )
 						continue look; // Not a match, move on
 				}
@@ -334,7 +334,7 @@ final class NativeBlob extends IdScriptableObject {
 		if (args.length != 0) {
 			double begin = ScriptRuntime.toInteger(args[0]);
 			double end;
-			int length = target.length();
+			int length = target.length;
 			if (begin < 0) {
 				begin += length;
 				if (begin < 0)
@@ -358,9 +358,19 @@ final class NativeBlob extends IdScriptableObject {
 					end = begin;
 			}
 			
-			return Arrays.copyOf(target, (int)begin, (int)end-begin);
+			return Arrays.copyOfRange(target, (int)begin, (int)(end-begin));
 		}
 		return target;
+	}
+	
+// #string_id_map#
+	
+	@Override
+	protected int findPrototypeId(String s) {
+		int id;
+// #generated#
+// #/generated#
+		return id;
 	}
 	
     private static final int
@@ -377,7 +387,9 @@ final class NativeBlob extends IdScriptableObject {
 		Id_slice                     = 11,
 		Id_equals                    = 12,
 		MAX_PROTOTYPE_ID             = 12;
-		
+	
+// #/string_id_map#
+	
 	private static final int 
 		ConstructorId_byteAt         = -Id_byteAt,
 		ConstructorId_intAt          = -Id_intAt,
