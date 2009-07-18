@@ -61,15 +61,12 @@ public class Global extends ImporterTopLevel {
 			String scriptFileName = (String) args[0];
 			File scriptFile = new File(scriptFileName);
 			if ( scriptFile.canRead() ) {
-				// ToDo: Other character encodings
 				FileInputStream is = new FileInputStream(scriptFile);
-				InputStreamReader in = new InputStreamReader(is, "UTF-8");
+				ScriptReader in = new ScriptReader(is);
 				return cx.evaluateReader( thisObj, in, scriptFile.getAbsolutePath(), 0, null );
 			} else {
 				throw jsIOError("exec() called with name of a script that doesn't exist or cannot be read");
 			}
-		} catch( NullPointerException e ) {
-			throw ScriptRuntime.typeError("exec() called without invalid script name");
 		} catch( FileNotFoundException e ) {
 			throw jsIOError("exec() called with name of a script that doesn't exist");
 		} catch( UnsupportedEncodingException e ) {
