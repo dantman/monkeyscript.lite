@@ -63,7 +63,7 @@ public class Global extends ImporterTopLevel {
 			if ( scriptFile.canRead() ) {
 				FileInputStream is = new FileInputStream(scriptFile);
 				ScriptReader in = new ScriptReader(is);
-				return cx.evaluateReader( thisObj, in, scriptFile.getAbsolutePath(), 0, null );
+				return cx.evaluateReader( thisObj, in, scriptFile.getAbsolutePath(), 1, null );
 			} else {
 				throw jsIOError("exec() called with name of a script that doesn't exist or cannot be read");
 			}
