@@ -7,6 +7,8 @@ import org.mozilla.javascript.*;
 // org.mozilla.javascript.NativeString was used as a reference for implementation of this
 final class NativeBlob extends IdScriptableObject {
 	
+	static final long serialVersionUID = 1248149631L;
+	
 	private static final Object BLOB_TAG = "Blob";
 	
 	static void init(Scriptable scope, boolean sealed) {
@@ -139,7 +141,7 @@ final class NativeBlob extends IdScriptableObject {
 								}
 								
 							}*/
-							byte[] b = nativeConvert( cx, args[0] );
+							byte[] b = nativeConvert( args[0] );
 							return new NativeBlob(b);
 						} else {
 							return NativeBlob.newEmpty();
@@ -150,15 +152,15 @@ final class NativeBlob extends IdScriptableObject {
 						return thisObj.toString();
 					
 					case Id_valueOf:
-						return thisObj;
+						return realThis(thisObj, f);
 					
 					case Id_toSource: {
 						byte[] b = realThis(thisObj, f).bytes;
 						StringBuffer sb = new StringBuffer("(new Blob([]))");
-						for (int i = 0; i < bytes.length; i++) {
+						for (int i = 0; i < b.length; i++) {
 							if (i > 0)
 								sb.insert(sb.length()-3, ", ");
-							sb.insert(sb.length()-3, Integer.toString(byteToInt(bytes[i])));
+							sb.insert(sb.length()-3, Integer.toString(byteToInt(b[i])));
 						}
 						return sb.toString();
 					}
@@ -177,22 +179,23 @@ final class NativeBlob extends IdScriptableObject {
 					}
     
 					case Id_indexOf:
+					case Id_lastIndexOf:
 						if ( args.length == 0 )
 							break;
-						byte[] needle = nativeConvert(cx, args[0]);
+						byte[] needle = nativeConvert(args[0]);
 						int offset = 0;
 						if ( args.length > 1 )
 							offset = ScriptRuntime.toInt32( args[1] );
-						return ScriptRuntime.wrapInt(js_indexOf(realThis(thisObj, f).bytes, needle, offset));
-					
-					case Id_lastIndexOf:
-						return ScriptRuntime.wrapInt(js_lastIndexOf(realThis(thisObj, f).bytes, args));
+						
+						if ( id != Id_lastIndexOf )
+							return ScriptRuntime.wrapInt(js_indexOf(realThis(thisObj, f).bytes, needle, offset));
+						return ScriptRuntime.wrapInt(js_lastIndexOf(realThis(thisObj, f).bytes, needle, offset));
     
 					case Id_split:
 						return js_split(cx, scope, realThis(thisObj, f).bytes, args);
     
 					case Id_concat:
-						return js_concat(realThis(thisObj, f).bytes, args);
+						return new NativeBlob(js_concat(realThis(thisObj, f).bytes, args));
     
 					case Id_slice:
 						return js_slice(realThis(thisObj, f).bytes, args);
@@ -223,27 +226,32 @@ final class NativeBlob extends IdScriptableObject {
 		return (NativeBlob)thisObj;
 	}
 	
-	private static byte[] nativeConvert(Context cx, Object o) {
+	private static byte[] nativeConvert(Object o) {
 		if(o instanceof NativeBlob)
 			return ((NativeBlob)o).bytes;
-		if(o instanceof NativeNumber) {
+		//if(o instanceof NativeNumber) {
+		if( ScriptRuntime.typeof(o).equals("number") ) {
 			int ii = ScriptRuntime.toInt32( o );
 			byte[] b = new byte[1];
 			b[0] = intToByte(ii);
 			return b;
 		}
-		if(o instanceof NativeArray) {
-			NativeArray a = (NativeArray) o;
-			byte[] ba = new byte[(int)a.getLength()];
-			for (int i = 0; i < ba.length; i++) {
-				Object bo = NativeArray.getElm(cx, (Scriptable)a, (long)i);
-				if (!(bo instanceof NativeNumber))
+		//if(o instanceof NativeArray) {
+		if( ScriptRuntime.isArrayObject(o) ) {
+			Object[] a = ScriptRuntime.getArrayElements((Scriptable)o);
+			//NativeArray a = (NativeArray) o;
+			byte[] ba = new byte[a.length];
+			for (int i = 0; i < a.length; i++) {
+				//Object bo = ScriptRuntime.getObjectIndex(o, i, cx);//NativeArray.getElm(cx, (Scriptable)a, (long)i);
+				Object bo = a[i];
+				if ( !ScriptRuntime.typeof(bo).equals("number") )
 					throw ScriptRuntime.typeError("Contents of data array used as argument to blob method was not entirely numbers");
 				int ii = ScriptRuntime.toInt32( bo );
 				byte b = intToByte(ii);
 				ba[i] = b;
 			}
 			return ba;
+
 		}
 		throw ScriptRuntime.typeError("Invalid data type used as argument to a blob method");
 	}
@@ -329,8 +337,104 @@ final class NativeBlob extends IdScriptableObject {
 		return -1;
 	}
 	
+	private static Object js_split(Context cx, Scriptable scope, byte[] target, Object[] args) {
+		// Mostly based on NativeString#js_split
+		
+		// create an empty Array to return;
+		Scriptable top = getTopLevelScope(scope);
+		Scriptable result = ScriptRuntime.newObject(cx, top, "Array", null);
+		
+		// return an array consisting of the target if no separator given
+		// don't check against undefined, because we want
+		// 'fooundefinedbar'.split(void 0) to split to ['foo', 'bar']
+		if (args.length < 1) {
+			result.put(0, result, new NativeBlob(target));
+			return result;
+		}
+		
+		// Use the second argument as the split limit, if given.
+		boolean limited = (args.length > 1) && (args[1] != Undefined.instance);
+		long limit = 0;  // Initialize to avoid warning.
+		if (limited) {
+			/* Clamp limit between 0 and 1 + string length. */
+			limit = ScriptRuntime.toUint32(args[1]);
+			if (limit > target.length)
+				limit = 1 + target.length;
+		}
+
+        byte[] separator = nativeConvert(args[0]);
+        int[] matchlen = new int[1];
+        matchlen[0] = separator.length;
+		
+		// split target with separator
+		int[] ip = { 0 };
+		int match;
+		int len = 0;
+		boolean[] matched = { false };
+		byte[][][] parens = { null };
+		
+		// ToDo: split isn't finished, this portion is majorly different than string split code
+		/*
+        while ((match = find_split(cx, scope, target, separator, version,
+                                   reProxy, re, ip, matchlen, matched, parens))
+               >= 0)
+        {
+            if ((limited && len >= limit) || (match > target.length()))
+                break;
+
+            String substr;
+            if (target.length() == 0)
+                substr = target;
+            else
+                substr = target.substring(ip[0], match);
+
+            result.put(len, result, substr);
+            len++;
+        /*
+         * Deviate from ECMA to imitate Perl, which omits a final
+         * split unless a limit argument is given and big enough.
+         *//*
+                if (!limited && ip[0] == target.length)
+                    break;
+            }
+        }*/
+        return result;
+	}
+	
+	private static byte[] js_concat(byte[] target, Object[] args) {
+		int N = args.length;
+		if (N == 0) { return target; }
+		else if (N == 1) {
+			byte[] arg = nativeConvert(args[0]);
+			byte[] newblob = Arrays.copyOf(target, target.length+arg.length);
+			
+			for (int i = 0; i != arg.length; ++i)
+				newblob[target.length+i] = arg[i];
+			
+			return newblob;
+		}
+
+		// Find total capacity for the final blob
+		int size = target.length;
+		byte[][] argsAsBytes = new byte[N][];
+		for (int i = 0; i != N; ++i) {
+			byte[] b = nativeConvert(args[i]);
+			argsAsBytes[i] = b;
+			size += b.length;
+		}
+
+		byte[] result = Arrays.copyOf(target, size);
+		int index = target.length;
+		for (int byteArrayN = 0; byteArrayN != N; ++byteArrayN) {
+			byte[] b = argsAsBytes[byteArrayN];
+			for (int i = 0; i != b.length; ++i, ++index)
+				result[index] = b[i];
+		}
+		return result;
+	}
 	
 	private static byte[] js_slice(byte[] target, Object[] args) {
+		// Based on NativeString#js_slice
 		if (args.length != 0) {
 			double begin = ScriptRuntime.toInteger(args[0]);
 			double end;
@@ -368,7 +472,35 @@ final class NativeBlob extends IdScriptableObject {
 	@Override
 	protected int findPrototypeId(String s) {
 		int id;
-// #generated#
+// #generated# Last update: 2009-07-20 19:04:25 PDT
+        L0: { id = 0; String X = null; int c;
+            L: switch (s.length()) {
+            case 5: c=s.charAt(1);
+                if (c=='l') { X="slice";id=Id_slice; }
+                else if (c=='n') { X="intAt";id=Id_intAt; }
+                else if (c=='p') { X="split";id=Id_split; }
+                break L;
+            case 6: c=s.charAt(0);
+                if (c=='b') { X="byteAt";id=Id_byteAt; }
+                else if (c=='c') { X="concat";id=Id_concat; }
+                else if (c=='e') { X="equals";id=Id_equals; }
+                break L;
+            case 7: c=s.charAt(0);
+                if (c=='i') { X="indexOf";id=Id_indexOf; }
+                else if (c=='v') { X="valueOf";id=Id_valueOf; }
+                break L;
+            case 8: c=s.charAt(3);
+                if (c=='o') { X="toSource";id=Id_toSource; }
+                else if (c=='t') { X="toString";id=Id_toString; }
+                break L;
+            case 11: c=s.charAt(0);
+                if (c=='c') { X="constructor";id=Id_constructor; }
+                else if (c=='l') { X="lastIndexOf";id=Id_lastIndexOf; }
+                break L;
+            }
+            if (X!=null && X!=s && !X.equals(s)) id = 0;
+            break L0;
+        }
 // #/generated#
 		return id;
 	}
