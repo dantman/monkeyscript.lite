@@ -16,7 +16,7 @@ final class NativeBlob extends IdScriptableObject {
 		obj.exportAsJSClass(MAX_PROTOTYPE_ID, scope, sealed);
 	}
 	
-	static NativeBlob newEmpty() {
+	static private NativeBlob newEmpty() {
 		byte[] b = new byte[0];
 		return new NativeBlob(b);
 	}
@@ -28,6 +28,10 @@ final class NativeBlob extends IdScriptableObject {
 	
 	private NativeBlob(byte[] b) {
 		bytes = b;
+	}
+	
+	static private Object quickNewNativeBlob(Context cx, Scriptable scope, Object target) {
+		return ScriptRuntime.newObject(cx, scope, "Blob", new Object[] { target });
 	}
 	
 	@Override
@@ -126,6 +130,14 @@ final class NativeBlob extends IdScriptableObject {
 					}
 					
 					case Id_constructor: {
+						boolean inNewExpr = (thisObj == null);
+						if (!inNewExpr) {
+							// IdFunctionObject.construct will set up parent, proto
+							return f.construct(cx, scope, args);
+						}
+						return jsConstructor(cx, scope, args);
+					}
+/*					case Id_constructor: {
 						if ( args.length > 0 ) {
 							/*if ( args[0] instanceof NativeNumber ) {
 								byte b = (byte) ScriptRuntime.toInt32( args[0] )-Byte.MIN_VALUE;
@@ -141,12 +153,13 @@ final class NativeBlob extends IdScriptableObject {
 								}
 								
 							}*/
-							byte[] b = nativeConvert( args[0] );
-							return new NativeBlob(b);
+							//byte[] b = nativeConvert( args[0] );
+							//return new NativeBlob(b);
+							/*
 						} else {
 							return NativeBlob.newEmpty();
 						}
-					}
+					}*/
 					
 					case Id_toString:
 						return thisObj.toString();
@@ -174,7 +187,7 @@ final class NativeBlob extends IdScriptableObject {
 							else return ScriptRuntime.NaNobj;
 						}
 						byte b = target[(int)pos];
-						if (id == Id_byteAt) return new NativeBlob(b);
+						if (id == Id_byteAt) return quickNewNativeBlob(cx, scope, b);
 						else return ScriptRuntime.wrapInt(byteToInt(b));
 					}
     
@@ -195,10 +208,10 @@ final class NativeBlob extends IdScriptableObject {
 						return js_split(cx, scope, realThis(thisObj, f).bytes, args);
     
 					case Id_concat:
-						return new NativeBlob(js_concat(realThis(thisObj, f).bytes, args));
+						return quickNewNativeBlob(cx, scope, js_concat(realThis(thisObj, f).bytes, args));
     
 					case Id_slice:
-						return js_slice(realThis(thisObj, f).bytes, args);
+						return quickNewNativeBlob(cx, scope, js_slice(realThis(thisObj, f).bytes, args));
     
 					case Id_equals: {
 						boolean eq = false;
@@ -227,17 +240,21 @@ final class NativeBlob extends IdScriptableObject {
 	}
 	
 	private static byte[] nativeConvert(Object o) {
-		if(o instanceof NativeBlob)
+		//if ( o.getClass() == byte.class )
+		//	return new byte[] { (byte)o };
+		if ( o.getClass() == byte[].class )
+			return (byte[])o;
+		if ( o instanceof NativeBlob )
 			return ((NativeBlob)o).bytes;
 		//if(o instanceof NativeNumber) {
-		if( ScriptRuntime.typeof(o).equals("number") ) {
+		if ( o instanceof Number ) {//oScriptRuntime.typeof(o).equals("number") ) {
 			int ii = ScriptRuntime.toInt32( o );
 			byte[] b = new byte[1];
 			b[0] = intToByte(ii);
 			return b;
 		}
 		//if(o instanceof NativeArray) {
-		if( ScriptRuntime.isArrayObject(o) ) {
+		if ( ScriptRuntime.isArrayObject(o) ) {
 			Object[] a = ScriptRuntime.getArrayElements((Scriptable)o);
 			//NativeArray a = (NativeArray) o;
 			byte[] ba = new byte[a.length];
@@ -253,9 +270,11 @@ final class NativeBlob extends IdScriptableObject {
 			return ba;
 
 		}
+		// ToDo: Output what kind of data is causing trouble
 		throw ScriptRuntime.typeError("Invalid data type used as argument to a blob method");
 	}
 	
+	// tlrobinson notes  (b >= 0) ? b : -1 * ((b ^ 0xFF) + 1)
 	private static int byteToInt(byte b) {
 		Byte bb = new Byte(b);
 		int bi = bb.intValue();
@@ -281,7 +300,9 @@ final class NativeBlob extends IdScriptableObject {
 	@Override
 	public Object get(int index, Scriptable start) {
 		if (0 <= index && index < bytes.length) {
-			return new NativeBlob(bytes[index]);
+			Context cx = Context.getCurrentContext();
+			Scriptable scope = start.getParentScope();
+			return quickNewNativeBlob(cx, scope, bytes[index]);
 		}
 		return super.get(index, start);
 	}
@@ -293,6 +314,14 @@ final class NativeBlob extends IdScriptableObject {
 		}
 		super.put(index, start, value);
 	}
+	
+    private static Object jsConstructor(Context cx, Scriptable scope, Object[] args) {
+		if (args.length == 0)
+			//return quickNewNativeBlob(cx, scope, new byte[0]);
+			return NativeBlob.newEmpty();
+		
+		return new NativeBlob(nativeConvert(args[0]));
+    }
 	
 	private static int js_indexOf(byte[] target, byte[] search, int begin2) {
 		double begin = (double) begin2;
@@ -342,13 +371,14 @@ final class NativeBlob extends IdScriptableObject {
 		
 		// create an empty Array to return;
 		Scriptable top = getTopLevelScope(scope);
-		Scriptable result = ScriptRuntime.newObject(cx, top, "Array", null);
+		//Scriptable result = ScriptRuntime.newObject(cx, top, "Array", null);
+		Scriptable result = cx.newArray(scope, 0);
 		
 		// return an array consisting of the target if no separator given
 		// don't check against undefined, because we want
 		// 'fooundefinedbar'.split(void 0) to split to ['foo', 'bar']
 		if (args.length < 1) {
-			result.put(0, result, new NativeBlob(target));
+			result.put(0, result, quickNewNativeBlob(cx, scope, target));
 			return result;
 		}
 		
