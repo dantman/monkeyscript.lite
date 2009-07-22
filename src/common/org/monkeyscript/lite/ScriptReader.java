@@ -19,6 +19,7 @@ public class ScriptReader extends Reader {
 	private BufferedReader cread;
 	private String charset;
 	private int skip = 0;
+	private int firstLine = 1;
 	private static final byte[] BOM_UTF8 = new byte[] { (byte)0xEF, (byte)0xBB, (byte)0xBF };
 	private static final byte[] BOM_UTF16LE = new byte[] { (byte)0xFF, (byte)0xFE };
 	private static final byte[] BOM_UTF16BE = new byte[] { (byte)0xFE, (byte)0xFF };
@@ -86,6 +87,9 @@ public class ScriptReader extends Reader {
 		cread.close();
 	}
 	
+	public int getFirstLine() {
+		return firstLine;
+	}
 	
 }
 
