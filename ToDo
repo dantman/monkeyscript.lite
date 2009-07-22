@@ -1,0 +1,10 @@
+- Buffer
+- Support optimization (compilation of .js files to .js.class)
+- Compile internal .js resources to java .class files on build
+- Support our Encodings spec (encodings headers in files) (includes shebangs)
+ - detection of UTF-8 and UTF-16 BOMs done
+- Support a multi-reader to exec multiple scripts as if they were one?
+- Banana
+- IO
+- JSGI
+- blob == blob?
