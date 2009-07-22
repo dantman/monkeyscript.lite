@@ -10,12 +10,12 @@ var monkeyscript = {
 	// Arguments
 	var args = Array.slice(_native.arguments);
 	monkeyscript.scriptName = args.shift();
-	//Object.seal(args); // ToDo: Support ES5 seal
+	//Object.seal(args); // @ES5
 	monkeyscript.arguments = args;
 	global.arguments = Array.slice(args);
 	
-	global.sleep = _native.sleep;
-	
+	global.Kernel = _native.Kernel;
+	//Object.seal(Kernel); // @ES5
 })(_native);
 
 if ( monkeyscript.scriptName )
