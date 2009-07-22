@@ -47,7 +47,7 @@ public class MonkeyScript {
 		try {
 			InputStream is = MonkeyScript.class.getResourceAsStream( fileName );
 			InputStreamReader in = new InputStreamReader(is, "UTF-8");
-			return cx.evaluateReader( scope, in, fileName, in.getFirstLine(), null );
+			return cx.evaluateReader( scope, in, fileName, 1, null );
 		}
 		catch( IOException e ) { reportWarning("Failed to exec script "+fileName, e); }
 		catch( NullPointerException e ) { reportWarning("Failed to exec script "+fileName, e); }
