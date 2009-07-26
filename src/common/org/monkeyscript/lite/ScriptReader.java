@@ -91,5 +91,18 @@ public class ScriptReader extends Reader {
 		return firstLine;
 	}
 	
+	public String eatSource() throws IOException {
+		StringBuffer buf = new StringBuffer();
+		int offset = 0;
+		while(true) {
+			char[] c = new char[512];
+			int len = read(c, offset, 512);
+			if ( len < 0 )
+				break;
+			buf.append(c, 0, len);
+		}
+		return buf.toString();
+	}
+	
 }
 

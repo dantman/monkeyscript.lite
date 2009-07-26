@@ -23,6 +23,7 @@ public class MonkeyScript {
 		
 		try {
 			Context cx = Context.enter();
+			cx.setOptimizationLevel(1);
 			cx.setLanguageVersion(Context.VERSION_1_7);
 			boolean sealed = cx.isSealed();
 			

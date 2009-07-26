@@ -2,6 +2,7 @@ package org.monkeyscript.lite;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
 
 import org.mozilla.javascript.*;
+import org.mozilla.javascript.optimizer.*;
 
 public class Global extends ImporterTopLevel {
 	
@@ -68,9 +70,59 @@ public class Global extends ImporterTopLevel {
 		try {
 			String scriptFileName = (String) args[0];
 			File scriptFile = new File(scriptFileName);
+			String canonPath = scriptFile.getCanonicalPath();
+			String dirName = scriptFile.getCanonicalFile().getParent();
+			File dir = new File(dirName);
+			String name = scriptFile.getName();
 			if ( scriptFile.canRead() ) {
+				/*File javaFile = new File( canonPath + ".class" ) );
+				if ( dir.canWrite() ) {
+				if ( javaFile.canRead() && javaFile.canWrite() ) {
+					// Note, .class files we can't write to (ie: delete when invalid are ignored for now)
+					if ( javaFile.lastModified() > scriptFile.lastModified() ) {
+						// Ok to load java file
+					} else {
+						// Java file is old, delete it and continue
+						javaFile.delete();
+					}
+				}*/
+				
 				FileInputStream is = new FileInputStream(scriptFile);
 				ScriptReader in = new ScriptReader(is);
+				
+				if ( dir.canWrite() ) {
+					boolean compileOk = true;
+					// Compiled mode, eat the reader
+					String source = in.eatSource();
+					CompilerEnvirons compilerEnv = new CompilerEnvirons();
+					compilerEnv.initFromContext(cx);
+					ClassCompiler compiler = new ClassCompiler(compilerEnv);
+					Object[] compiled = compiler.compileToClassFiles(source, canonPath, in.getFirstLine(), getJavaClassName(canonPath));
+					if ( compiled != null && compiled.length > 0 ) {
+						for (int j = 0; j != compiled.length; j += 2) {
+							//String className = (String)compiled[j];
+							byte[] bytes = (byte[])compiled[j + 1];
+							String classFileName = name.concat(".class");
+							if ( j > 0 )
+								classFileName = classFileName.concat(Integer.toString(j));
+							File outfile = new File(dir, classFileName);
+							try {
+								FileOutputStream os = new FileOutputStream(outfile);
+								try { os.write(bytes); }
+								finally { os.close(); }
+							} catch (IOException ioe) {
+								// If it fails, we ignore and use interpreted
+								compileOk = false;
+							}
+						}
+						
+						if ( compileOk ) {
+							// ToDo: Use what was just compiled
+						}
+					}
+				}
+				
+				// Interpreted mode, use the reader
 				return cx.evaluateReader( thisObj, in, scriptFile.getAbsolutePath(), in.getFirstLine(), null );
 			} else {
 				throw jsIOError("exec() called with name of a script that doesn't exist or cannot be read");
@@ -82,6 +134,26 @@ public class Global extends ImporterTopLevel {
 		} catch( IOException e ) {
 			throw jsIOError(e.getMessage());
 		}
+	}
+	
+	// From org.mozilla.javascript.tools.jsc.Main.getClassName()
+	private static String getJavaClassName(String name) {
+		char[] s = new char[name.length()+1];
+		char c;
+		int j = 0;
+
+		if (!Character.isJavaIdentifierStart(name.charAt(0))) {
+			s[j++] = '_';
+		}
+		for (int i=0; i < name.length(); i++, j++) {
+			c = name.charAt(i);
+			if ( Character.isJavaIdentifierPart(c) ) {
+				s[j] = c;
+			} else {
+				s[j] = '_';
+			}
+		}
+		return (new String(s)).trim();
 	}
 	
 	public static EcmaError jsIOError(String message) {
