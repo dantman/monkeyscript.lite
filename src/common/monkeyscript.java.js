@@ -81,7 +81,24 @@
 			},
 			toString: function() {
 				return this.name + ' ' + this.arch + ' (' + this.version + ')';
+			},
+			// @todo Temp Directory
+			get temp() {
+				// Windows TEMP and TMP
+				// Unix-like /tmp (systems with fileSeparator=/ ?)
 			}
+		},
+		get monkeyscriptHome() {
+			// The shell always sets this
+			return Kernel.env("MONKEYSCRIPT_HOME");
+		},
+		get configDir() {
+			// Based on MonkeyScript Home on Windows
+			// /etc/monkeyscript on Unix-like
+			if( Kernel.env("PROGRAMFILES") )
+				return Kernel.monkeyscriptHome + Kernel.os.fileSeparator + 'etc';
+			
+			return "/etc/monkeyscript";
 		},
 		/**
 		 * Read File reads in a UTF-8 encoded file from the filesystem and returns
