@@ -1,0 +1,22 @@
+Updating lib/wrench17.js
+------------------------
+lib/wrench17.js is used when building MonkeyScript lite.
+The Wrench.js project serves as the majority of MonkeyScript's stdlib.
+
+To update the copy of lib/wrench17.js follow these instructions:
+    > git submodule init      # initialize the lib/wrench submodule
+    > git submodule update    # update/check out the submodule
+    > cd lib/wrench           # cd into the submodule's directory
+    > git pull origin master  # update your copy of the wrench repo
+    > cd ../../               # return to the MonkeyScript lite directory
+    > make wrench             # update lib/wrench17.js using the submodule
+If you are checking the changes into the git repo as part of a new commit also do this:
+    > git add lib/wrench17.js # add the new wrench17.js into the index
+    > git add lib/wrench      # Update the commit referenced by the submodule
+                              # DON'T use a trailing slash, if you do you'll add
+                              # the contents instead of updating the submodule
+
+Related
+-------
+Wrench.js: http://wrench.monkeyscript.org
+

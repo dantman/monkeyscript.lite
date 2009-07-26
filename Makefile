@@ -46,3 +46,7 @@ run:
 	@@echo "Running project"
 	-@@${DIST_DIR}/monkeyscript test.js
 
+wrench:
+	@@echo "Updating lib/wrench17.js"
+	cd lib/wrench/; make wrench17 DIST_DIR=..
+
