@@ -1,0 +1,3 @@
+[submodule "lib/wrench"]
+	path = lib/wrench
+	url = git://github.com/dantman/wrench.git
