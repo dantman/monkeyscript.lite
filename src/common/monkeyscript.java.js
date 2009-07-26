@@ -96,14 +96,18 @@
 			var f = new java.io.File(fileName);
 			var is = new java.io.FileInputStream(f);
 			var reader = new java.io.InputStreamReader(new java.io.BufferedInputStream(is), "UTF-8");
-			var buf = new java.lang.StringBuffer();
-			var offset = 0;
-			while(true) {
-				var charBuf = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, 512);
-				var len = reader.read(charBuf, offset, 512);
-				if ( len < 0 )
-					break;
-				buf.append(charBuf, 0, len);
+			try {
+				var buf = new java.lang.StringBuffer();
+				var offset = 0;
+				while(true) {
+					var charBuf = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, 512);
+					var len = reader.read(charBuf, offset, 512);
+					if ( len < 0 )
+						break;
+					buf.append(charBuf, 0, len);
+				}
+			} finally {
+				reader.close();
 			}
 			return String(buf.toString());
 		},
