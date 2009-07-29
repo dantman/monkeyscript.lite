@@ -18,6 +18,9 @@ var monkeyscript = {
 	//Object.seal(Kernel); // @ES5
 })(_native);
 
+// Setup global Error objects
+var IOError = Kernel.newError("IOError");
+
 if ( monkeyscript.scriptName )
 	if ( monkeyscript.scriptName.startsWith('javascript:') )
 		eval(monkeyscript.scriptName.substr('javascript:'.length));

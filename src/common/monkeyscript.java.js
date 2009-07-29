@@ -139,6 +139,31 @@
 		 */
 		writeFile: function(fileName, text) {
 			
+		},
+		/**
+		 * Creates a new Error class and returns it.
+		 * This is a hack primarily until the best way to create a new error class
+		 * in Rhino can be found.
+		 */
+		newError: function(name) {
+			// @ES5
+			/*
+			function XError(message) {
+				var e = Object.create(Error.prototype);
+				e.name = name;
+				e.message = message || "";
+				return e;
+			}
+			*/
+			function CustomError(message) {
+				if (!(this instanceof CustomError))
+					return new CustomError(message);
+				this.name = name;
+				this.message = message || "";
+			}
+			CustomError.prototype.__proto__ = Error.prototype;
+			CustomError.name = name;
+			return CustomError;
 		}
 	};
 	Kernel.gc.force = Kernel.gc; // In SpiderMonkey we have forced and non forced gc. In Rhino we just alias forced to normal.
