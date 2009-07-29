@@ -36,6 +36,8 @@ public class Global extends ImporterTopLevel {
 		defineFunctionProperties(functions, Global.class, ScriptableObject.DONTENUM);
 		try {
 			defineProperty("__FILE__", this, Global.class.getMethod("js_FILE_", ScriptRuntime.ScriptableObjectClass), null, ScriptableObject.DONTENUM | ScriptableObject.READONLY);
+			defineProperty("__DIR__", this, Global.class.getMethod("js_DIR_", ScriptRuntime.ScriptableObjectClass), null, ScriptableObject.DONTENUM | ScriptableObject.READONLY);
+			defineProperty("__LINE__", this, Global.class.getMethod("js_LINE_", ScriptRuntime.ScriptableObjectClass), null, ScriptableObject.DONTENUM | ScriptableObject.READONLY);
 		} catch ( NoSuchMethodException e ) {
 			System.out.println(e);
 			System.exit(1);
@@ -92,6 +94,22 @@ public class Global extends ImporterTopLevel {
 		//String fileName = Context.getSourcePositionFromStackPublic(linep);
 		//return fileName;
 		return ScriptRuntime.constructError("Error", "").getSourceName();
+	}
+	
+	public static String js_DIR_(ScriptableObject obj) {
+		//This is the correct way to do this, but doesn't work because it's protected and can't be proxied
+		//int[] linep = new int[1];
+		//String fileName = Context.getSourcePositionFromStackPublic(linep);
+		//return (new File(fileName)).getParent();
+		return (new File(ScriptRuntime.constructError("Error", "").getSourceName())).getParent();
+	}
+	
+	public static int js_LINE_(ScriptableObject obj) {
+		//This is the correct way to do this, but doesn't work because it's protected and can't be proxied
+		//int[] linep = new int[1];
+		//String fileName = Context.getSourcePositionFromStackPublic(linep);
+		//return linep[0];
+		return ScriptRuntime.constructError("Error", "").getLineNumber();
 	}
 	
 }
