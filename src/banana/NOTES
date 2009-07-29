@@ -1,0 +1,6 @@
+- RC Scripts are responsible for setting up banana.
+ - While bundled with MonkeyScript, Banana is included separately it's not put into the monkeyscript.jar itself
+ - A global rc script (like /etc/monkeyscript/monkeyscriptrc.js) should do monkeyscript setup.
+  - Normally this is the responsibility of the installer or package maintainer
+ - banana.lib.js must be included to provide all the program level banana stuff like banana()
+ - a run hook must be configured for banana.js so that `monkeyscript -h banana ...` will work
