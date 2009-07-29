@@ -96,7 +96,7 @@
 			// Based on MonkeyScript Home on Windows
 			// /etc/monkeyscript on Unix-like
 			if( Kernel.env("PROGRAMFILES") )
-				return Kernel.monkeyscriptHome + Kernel.os.fileSeparator + 'etc';
+				return Kernel.monkeyscriptHome;
 			
 			return "/etc/monkeyscript";
 		},
