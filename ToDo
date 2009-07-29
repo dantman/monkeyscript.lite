@@ -1,5 +1,5 @@
-- Buffer
-- Support optimization (compilation of .js files to .js.class)
+- Buffer (buffer branch)
+- Support optimization (compilation of .js files to .js.class) (optimizer branch)
 - Compile internal .js resources to java .class files on build
 - Support our Encodings spec (encodings headers in files) (includes shebangs)
  - detection of UTF-8 and UTF-16 BOMs done
@@ -11,3 +11,5 @@
 - Rhino 1.7 appears to have a bug in __iterator__ where isKey is true even when for each is used
   Look at alpha Rhino... If the bug is gone we might consider using it since it has some ES5 stuff
   If the bug is still there we'll have to consider fixing it ourselves and cloning the rhino repo to build newer versions of js.jar
+- Some sort of constant like __FILE__ and __DIR__ injected into the scope of files run by exec and the like
+ - Or should this be some sort of compiler thing handled by ScriptReader?
