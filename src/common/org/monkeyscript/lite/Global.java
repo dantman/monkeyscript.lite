@@ -26,7 +26,7 @@ public class Global extends ImporterTopLevel {
 	public void init(Context cx) {
 		boolean sealed = cx.isSealed();
 		initStandardObjects( cx, sealed );
-		defineProperty("global", this, ScriptableObject.DONTENUM);
+		defineProperty("global", this, ScriptableObject.DONTENUM | ScriptableObject.READONLY);
 		NativeBlob.init( this, sealed );
 		//NativeBuffer.init( this, sealed );
 		String[] functions = {
