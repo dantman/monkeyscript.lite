@@ -1,0 +1,7 @@
+A short warning to people who checkout branches other than the master branch.
+I will periodically rebase my branches onto the master to keep a clean history.
+This means for all branches other than master I will be using --force on my
+git push. I provide those branches as public reference to what I am working on.
+They are essencially MY personal branches, I treat them as if they were on my
+local computer. Thus if you wish to actually check these branches out, you'd
+better be prepared to use --force on your git pull's from them. ~ Daniel Driesen
