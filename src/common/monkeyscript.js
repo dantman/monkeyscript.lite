@@ -16,10 +16,36 @@ var monkeyscript = {
 	
 	global.Kernel = _native.Kernel;
 	//Object.seal(Kernel); // @ES5
+	
+	monkeyscript.rc.push(
+		Kernel.configDir + Kernel.os.fileSeparator + 'monkeyscriptrc.js',
+		Kernel.configDir + Kernel.os.fileSeparator + 'monkeyscriptrc'
+	);
+	var baseNames = ['.monkeyscriptrc.js', '.monkeyscriptrc'];
+	[
+		Kernel.home,
+		Kernel.currentWorkingDirectory
+	].forEach(function(basePath) {
+		baseNames.forEach(function(baseName) {
+			monkeyscript.rc.push( basePath + Kernel.os.fileSeparator + baseName );
+		});
+	});
+	//Object.seal(monkeyscript.rc); // @ES5
+	
 })(_native);
 
 // Setup global Error objects
 var IOError = Kernel.newError("IOError");
+
+//for each( let rc in monkeyscript.rc ) // Rhino's __iterator__ is broken atm
+for ( let k in monkeyscript.rc ) {
+	var rc = monkeyscript.rc[k];
+	try { exec(rc); }
+	// We're just going to ignore IOErrors made by rc scripts
+	catch( e if e instanceof IOError ) {}
+	// Other errors will be printed, but still not affect running the script
+	catch( e ) { print(e); }
+}
 
 if ( monkeyscript.scriptName )
 	if ( monkeyscript.scriptName.startsWith('javascript:') )
