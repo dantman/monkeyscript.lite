@@ -11,7 +11,7 @@
 			name: "Rhino",
 			version: "1.7",
 			toString: function() {
-				return this.name + ' ' + this.version;
+				return org.mozilla.javascript.Context.getCurrentContext().getImplementationVersion(); // this.name + ' ' + this.version;
 			}
 		},
 		host: ["Java/", sysprop('java.specification.version'), ' "',
