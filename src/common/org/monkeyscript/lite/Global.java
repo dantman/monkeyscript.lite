@@ -34,6 +34,12 @@ public class Global extends ImporterTopLevel {
 			"print",
 		};
 		defineFunctionProperties(functions, Global.class, ScriptableObject.DONTENUM);
+		try {
+			defineProperty("__FILE__", this, Global.class.getMethod("js_FILE_", ScriptRuntime.ScriptableObjectClass), null, ScriptableObject.DONTENUM | ScriptableObject.READONLY);
+		} catch ( NoSuchMethodException e ) {
+			System.out.println(e);
+			System.exit(1);
+		}
 	}
 	
 	public static Object print(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
@@ -78,6 +84,14 @@ public class Global extends ImporterTopLevel {
 	
 	public static EcmaError jsIOError(String message) {
 		return ScriptRuntime.constructError("IOError", message);
+	}
+	
+	public static String js_FILE_(ScriptableObject obj) {
+		//This is the correct way to do this, but doesn't work because it's protected and can't be proxied
+		//int[] linep = new int[1];
+		//String fileName = Context.getSourcePositionFromStackPublic(linep);
+		//return fileName;
+		return ScriptRuntime.constructError("Error", "").getSourceName();
 	}
 	
 }
