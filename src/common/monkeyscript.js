@@ -1,6 +1,7 @@
 
 var monkeyscript = {
 	version: '0.0.0.0a',
+	hooks: {},
 	rc: []
 };
 
@@ -9,7 +10,13 @@ var monkeyscript = {
 	
 	// Arguments
 	var args = Array.slice(_native.arguments);
-	monkeyscript.scriptName = args.shift();
+	if ( args[0] === '-h' ) {
+		args.shift();
+		monkeyscript.hookName = args.shift();
+	} else {
+		monkeyscript.scriptName = args.shift();
+	}
+	
 	//Object.seal(args); // @ES5
 	monkeyscript.arguments = args;
 	global.arguments = Array.slice(args);
@@ -47,11 +54,17 @@ for ( let k in monkeyscript.rc ) {
 	catch( e ) { print(e); }
 }
 
-if ( monkeyscript.scriptName )
+if ( monkeyscript.hookName ) {
+	let scriptName = monkeyscript.hooks[monkeyscript.hookName];
+	if ( scriptName )
+		exec(scriptName);
+	else
+		throw new Error("The hook "+monkeyscript.hookName+" does not exist");
+} else if ( monkeyscript.scriptName ) {
 	if ( monkeyscript.scriptName.startsWith('javascript:') )
 		eval(monkeyscript.scriptName.substr('javascript:'.length));
 	else
 		exec(monkeyscript.scriptName);
-else
+} else
 	throw new Error("No script specified");
 
