@@ -33,6 +33,7 @@ public class MonkeyScript {
 			Scriptable argsObj = cx.newArray(global, array);
 			global.defineProperty("_arguments", argsObj, ScriptableObject.DONTENUM);
 			
+			quickRunScript( cx, global, "json2.js" );
 			quickRunScript( cx, global, "wrench17.js" );
 			quickRunScript( cx, global, "monkeyscript.java.js" );
 			quickRunScript( cx, global, "monkeyscript.js" );

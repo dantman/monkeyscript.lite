@@ -30,8 +30,10 @@ ${DIST_DIR}/build/org/monkeyscript/lite/monkeyscript.java.js: ${SRC_DIR}/common/
 	cp ${SRC_DIR}/common/monkeyscript.java.js ${DIST_DIR}/build/org/monkeyscript/lite
 ${DIST_DIR}/build/org/monkeyscript/lite/wrench17.js: ${LIB_DIR}/wrench17.js
 	cp ${LIB_DIR}/wrench17.js ${DIST_DIR}/build/org/monkeyscript/lite
+${DIST_DIR}/build/org/monkeyscript/lite/json2.js: ${LIB_DIR}/json2.js
+	cp ${LIB_DIR}/json2.js ${DIST_DIR}/build/org/monkeyscript/lite
 
-${JAR}: ${DIST_DIR}/js.jar ${DIST_DIR}/build/org/monkeyscript/lite/*.class ${DIST_DIR}/build/org/monkeyscript/lite/monkeyscript.js ${DIST_DIR}/build/org/monkeyscript/lite/monkeyscript.java.js ${DIST_DIR}/build/org/monkeyscript/lite/wrench17.js
+${JAR}: ${DIST_DIR}/js.jar ${DIST_DIR}/build/org/monkeyscript/lite/*.class ${DIST_DIR}/build/org/monkeyscript/lite/monkeyscript.js ${DIST_DIR}/build/org/monkeyscript/lite/monkeyscript.java.js ${DIST_DIR}/build/org/monkeyscript/lite/wrench17.js ${DIST_DIR}/build/org/monkeyscript/lite/json2.js
 	jar cmf ${SRC_DIR}/common/manifest ${JAR} -C ${DIST_DIR}/build org/monkeyscript/lite/
 
 debug-compile:
