@@ -93,7 +93,7 @@ public class Global extends ImporterTopLevel {
 		//int[] linep = new int[1];
 		//String fileName = Context.getSourcePositionFromStackPublic(linep);
 		//return fileName;
-		return ScriptRuntime.constructError("Error", "").getSourceName();
+		return ScriptRuntime.constructError("Error", "").sourceName();
 	}
 	
 	public static String js_DIR_(ScriptableObject obj) {
@@ -101,7 +101,7 @@ public class Global extends ImporterTopLevel {
 		//int[] linep = new int[1];
 		//String fileName = Context.getSourcePositionFromStackPublic(linep);
 		//return (new File(fileName)).getParent();
-		return (new File(ScriptRuntime.constructError("Error", "").getSourceName())).getParent();
+		return (new File(ScriptRuntime.constructError("Error", "").sourceName())).getParent();
 	}
 	
 	public static int js_LINE_(ScriptableObject obj) {
@@ -109,7 +109,7 @@ public class Global extends ImporterTopLevel {
 		//int[] linep = new int[1];
 		//String fileName = Context.getSourcePositionFromStackPublic(linep);
 		//return linep[0];
-		return ScriptRuntime.constructError("Error", "").getLineNumber();
+		return ScriptRuntime.constructError("Error", "").lineNumber();
 	}
 	
 }
