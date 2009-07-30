@@ -1,3 +1,4 @@
+// -*- coding: UTF-8 -*-
 
 function read(fnRead, len) {
 	if ( len === 0 )
