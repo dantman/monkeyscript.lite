@@ -105,44 +105,77 @@
 			return "/etc/monkeyscript";
 		},
 		/**
-		 * Read File reads in a UTF-8 encoded file from the filesystem and returns
-		 * it as a string.
-		 * 
-		 * This is not intended as a general use method. Programmers should use
+		 * fs stores core filesystem access functionality.
+		 * These is not intended as general use methods. Programmers should use
 		 * the io banana for that instead.
 		 * This is intended for use by internal and banana code which do not
 		 * have access to the higher level filesystem access methods.
 		 */
-		readFile: function(fileName) {
-			var f = new java.io.File(fileName);
-			var is = new java.io.FileInputStream(f);
-			var reader = new java.io.InputStreamReader(new java.io.BufferedInputStream(is), "UTF-8");
-			try {
-				var buf = new java.lang.StringBuffer();
-				var offset = 0;
-				while(true) {
-					var charBuf = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, 512);
-					var len = reader.read(charBuf, offset, 512);
-					if ( len < 0 )
-						break;
-					buf.append(charBuf, 0, len);
+		fs: {
+			exists: function(fileName) {
+				var f = new java.io.File(fileName);
+				return Boolean(f.exists());
+			},
+			canRead: function(fileName) {
+				var f = new java.io.File(fileName);
+				return Boolean(f.canRead());
+			},
+			canWrite: function(fileName) {
+				var f = new java.io.File(fileName).getAbsoluteFile();
+				return Boolean(f.exists() ? f.canWrite() : f.getParentFile().canWrite());
+			},
+			absoluteDirname: function(fileName) {
+				return String(new java.io.File(fileName).getAbsoluteFile().getParent());
+			},
+			/**
+			 * Read File reads in a UTF-8 encoded file from the filesystem and returns
+			 * it as a string.
+			 * 
+			 * This is not intended as a general use method. Programmers should use
+			 * the io banana for that instead.
+			 * This is intended for use by internal and banana code which do not
+			 * have access to the higher level filesystem access methods.
+			 */
+			readFile: function(fileName) {
+				var f = new java.io.File(fileName);
+				var is = new java.io.FileInputStream(f);
+				var reader = new java.io.InputStreamReader(new java.io.BufferedInputStream(is), "UTF-8");
+				try {
+					var buf = new java.lang.StringBuffer();
+					var offset = 0;
+					while(true) {
+						var charBuf = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, 512);
+						var len = reader.read(charBuf, offset, 512);
+						if ( len < 0 )
+							break;
+						buf.append(charBuf, 0, len);
+					}
+				} finally {
+					reader.close();
 				}
-			} finally {
-				reader.close();
+				return String(buf.toString());
+			},
+			/**
+			 * Read File writes out a UTF-8 encoded file from the filesystem and
+			 * creates it if necessary.
+			 * 
+			 * This is not intended as a general use method. Programmers should use
+			 * the io banana for that instead.
+			 * This is intended for use by internal and banana code which do not
+			 * have access to the higher level filesystem access methods.
+			 */
+			writeFile: function(fileName, text) {
+				var text = String(text);
+				var f = new java.io.File(fileName);
+				var os = new java.io.FileOutputStream(f)
+				var writer = new java.io.BufferedWriter(new java.io.OutputStreamWriter(os, "UTF-8"));
+				try {
+					writer.write(text, 0, text.length);
+				} finally {
+					writer.close();
+				}
+				return true;
 			}
-			return String(buf.toString());
-		},
-		/**
-		 * Read File writes out a UTF-8 encoded file from the filesystem and
-		 * creates it if necessary.
-		 * 
-		 * This is not intended as a general use method. Programmers should use
-		 * the io banana for that instead.
-		 * This is intended for use by internal and banana code which do not
-		 * have access to the higher level filesystem access methods.
-		 */
-		writeFile: function(fileName, text) {
-			
 		},
 		/**
 		 * Creates a new Error class and returns it.
