@@ -1,0 +1,9 @@
+{
+	"name": "IO",
+	"short": "io",
+	"namespace": "io",
+	"components": [
+		"File.js",
+		"Stream.js"
+	]
+}
