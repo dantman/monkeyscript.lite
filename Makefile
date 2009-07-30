@@ -34,6 +34,9 @@ ${DIST_DIR}/build/org/monkeyscript/lite/wrench17.js: ${LIB_DIR}/wrench17.js
 ${JAR}: ${DIST_DIR}/js.jar ${DIST_DIR}/build/org/monkeyscript/lite/*.class ${DIST_DIR}/build/org/monkeyscript/lite/monkeyscript.js ${DIST_DIR}/build/org/monkeyscript/lite/monkeyscript.java.js ${DIST_DIR}/build/org/monkeyscript/lite/wrench17.js
 	jar cmf ${SRC_DIR}/common/manifest ${JAR} -C ${DIST_DIR}/build org/monkeyscript/lite/
 
+debug-compile:
+	javac -Xlint:deprecation -cp ${CLASSPATH} -d ${DIST_DIR}/build ${SRC_DIR}/common/org/monkeyscript/lite/*.java
+
 ${DIST_DIR}/build/org/monkeyscript/lite/*.class: ${SRC_DIR}/common/org/monkeyscript/lite/*.java
 	javac -cp ${CLASSPATH} -d ${DIST_DIR}/build ${SRC_DIR}/common/org/monkeyscript/lite/*.java
 
