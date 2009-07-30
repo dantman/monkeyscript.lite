@@ -45,6 +45,10 @@
 		get processors() {
 			return Number(System.availableProcessors());
 		},
+		die: function(message) {
+			print(message);
+			Kernel.exit(1);
+		},
 		exit: function(status) {
 			System.exit(status);
 		},
