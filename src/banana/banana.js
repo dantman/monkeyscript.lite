@@ -22,6 +22,7 @@ case 'collect':
 		Kernel.die('Registry file not specified.');
 	if ( !bananaFiles.length )
 		Kernel.die("Can't build a registry of no bananas.");
+	actions.collect(registryFile, bananaFiles);
 	break;
 default:
 	print("Invalid action specified.");
