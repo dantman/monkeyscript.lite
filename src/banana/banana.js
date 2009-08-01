@@ -1,7 +1,7 @@
 // -*- coding: UTF-8 -*-
 
-exec(__DIR__+'/banana.actions.js');
-exec(__DIR__+'/banana.help.js');
+include.once(__DIR__+'/banana.actions.js');
+include.once(__DIR__+'/banana.help.js');
 
 var args = Array.slice(arguments);
 
@@ -25,7 +25,6 @@ case 'collect':
 	actions.collect(registryFile, bananaFiles);
 	break;
 default:
-	print("Invalid action specified.");
-	Kernel.exit(1);
+	Kernel.die("Invalid action specified.");
 }
 

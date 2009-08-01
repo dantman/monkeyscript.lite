@@ -12,8 +12,8 @@ import org.mozilla.javascript.*;
 
 public class Global extends ImporterTopLevel {
 	
-    public Global() {}
-    public Global(Context cx) { init(cx); }
+	public Global() {}
+	public Global(Context cx) { init(cx); }
 	public void init(ContextFactory factory) {
 		factory.call(new ContextAction() {
 			public Object run(Context cx) {
@@ -31,6 +31,10 @@ public class Global extends ImporterTopLevel {
 		//NativeBuffer.init( this, sealed );
 		String[] functions = {
 			"exec",
+			"globalExec",
+			"include",
+			"includeOnce",
+			"includeIfExists",
 			"print",
 		};
 		defineFunctionProperties(functions, Global.class, ScriptableObject.DONTENUM);
@@ -45,43 +49,93 @@ public class Global extends ImporterTopLevel {
 	}
 	
 	public static Object print(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
-        PrintStream out = System.out;
-        for (int i=0; i < args.length; i++) {
-            if (i > 0)
-                out.print(" ");
+		PrintStream out = System.out;
+		for (int i=0; i < args.length; i++) {
+			if (i > 0)
+				out.print(" ");
 
-            // Convert the arbitrary JavaScript value into a string form.
-            String s = Context.toString(args[i]);
+			// Convert the arbitrary JavaScript value into a string form.
+			String s = Context.toString(args[i]);
 
-            out.print(s);
-        }
-        out.println();
-        return Context.getUndefinedValue();
-    }
-    
-	/**
-	 * MonkeyScript exec();
-	 */
-	public static Object exec( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
+			out.print(s);
+		}
+		out.println();
+		return Context.getUndefinedValue();
+	}
+	
+	protected static final int SCRIPT_RESULT = 1;
+	protected static final int IF_EXISTS     = 2;
+	protected static final int ADD_INCLUDED  = 4;
+	protected static final int NOT_INCLUDED  = 8;
+	
+	private static Object runScript( Context cx, Scriptable thisObj, Object[] args, Function funObj, int flags ) {
 		if ( args.length == 0 )
-			throw ScriptRuntime.typeError("exec() called without name of script to execute");
+			throw ScriptRuntime.typeError("No script name");
+		String scriptFileName = (String)args[0];
+		File scriptFile = new File(scriptFileName);
 		try {
-			String scriptFileName = (String) args[0];
-			File scriptFile = new File(scriptFileName);
 			if ( scriptFile.canRead() ) {
+				if ( (flags & NOT_INCLUDED ) != 0 ) {
+					Scriptable included = getIncluded(thisObj);
+					if ( ScriptableObject.callMethod(included, "has", new Object[] { scriptFile.getCanonicalPath() }) == Boolean.TRUE )
+						return Boolean.TRUE;
+				}
 				FileInputStream is = new FileInputStream(scriptFile);
 				ScriptReader in = new ScriptReader(is);
-				return cx.evaluateReader( thisObj, in, scriptFile.getAbsolutePath(), in.getFirstLine(), null );
+				if ( (flags & ADD_INCLUDED) != 0 ) {
+					Scriptable included = getIncluded(thisObj);
+					ScriptableObject.callMethod(included, "push", new Object[] { scriptFile.getCanonicalPath() });
+				}
+				Object res = cx.evaluateReader( thisObj, in, scriptFile.getAbsolutePath(), in.getFirstLine(), null );
+				return (flags & SCRIPT_RESULT) != 0 ? res : Boolean.TRUE;
 			} else {
-				throw jsIOError("exec() called with name of a script that doesn't exist or cannot be read");
+				if ( (flags & IF_EXISTS) != 0 )
+					return false;
+				throw jsIOError("Script "+scriptFileName+" does not exist or cannot be read");
 			}
 		} catch( FileNotFoundException e ) {
-			throw jsIOError("exec() called with name of a script that doesn't exist");
+			if ( (flags & IF_EXISTS) != 0 )
+				return false;
+			throw jsIOError("Script "+scriptFileName+" does not exist");
 		} catch( UnsupportedEncodingException e ) {
-			throw jsIOError("Unsupported character encodign for exec(): " + e.getMessage());
+			throw jsIOError("Unsupported character encoding: " + e.getMessage());
 		} catch( IOException e ) {
 			throw jsIOError(e.getMessage());
 		}
+		//return Boolean.FALSE;
+	}
+	
+	public static Object exec( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
+		// @todo
+		throw ScriptRuntime.constructError("Error", "Unimplemented");
+	}
+	
+	public static Object globalExec( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
+		return runScript(cx, thisObj, args, funObj, SCRIPT_RESULT);
+	}
+	
+	public static Object include( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
+		return runScript(cx, thisObj, args, funObj, ADD_INCLUDED);
+	}
+	
+	public static Object includeOnce( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
+		return runScript(cx, thisObj, args, funObj, ADD_INCLUDED | NOT_INCLUDED);
+	}
+	
+	public static Object includeIfExists( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
+		return runScript(cx, thisObj, args, funObj, IF_EXISTS);
+	}
+	
+	public static Scriptable getIncluded( Scriptable scope ) {
+		Object monkeyscript = ScriptRuntime.getTopLevelProp(scope, "monkeyscript");
+		if (!(monkeyscript instanceof Scriptable))
+			throw new ScriptPanic("monkeyscript global does not exist");
+		Object included = ScriptableObject.getProperty((Scriptable)monkeyscript, "included");
+		if (!(included instanceof Scriptable))
+			throw new ScriptPanic("monkeyscript.included does not exist");
+		if (!ScriptRuntime.isArrayObject(included))
+			throw new ScriptPanic("monkeyscript.included is not an array");
+		return (Scriptable)included;
 	}
 	
 	public static EcmaError jsIOError(String message) {

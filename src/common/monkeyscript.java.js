@@ -1,4 +1,10 @@
 
+include.once = includeOnce;
+delete global.includeOnce;
+
+include.ifExists = includeIfExists;
+delete global.includeIfExists;
+
 {
 	let System = java.lang.System;
 	let Runtime = java.lang.Runtime.getRuntime();	

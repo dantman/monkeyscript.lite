@@ -2,7 +2,8 @@
 var monkeyscript = {
 	version: '0.0.0.0a',
 	hooks: {},
-	rc: []
+	rc: [],
+	included: []
 };
 
 (function(_native) {
@@ -47,9 +48,7 @@ var IOError = Kernel.newError("IOError");
 //for each( let rc in monkeyscript.rc ) // Rhino's __iterator__ is broken atm
 for ( let k in monkeyscript.rc ) {
 	var rc = monkeyscript.rc[k];
-	try { exec(rc); }
-	// We're just going to ignore IOErrors made by rc scripts
-	catch( e if e instanceof IOError ) {}
+	try { include.ifExists(rc); }
 	// Other errors will be printed, but still not affect running the script
 	catch( e ) { print(e); }
 }
@@ -57,14 +56,14 @@ for ( let k in monkeyscript.rc ) {
 if ( monkeyscript.hookName ) {
 	let scriptName = monkeyscript.hooks[monkeyscript.hookName];
 	if ( scriptName )
-		exec(scriptName);
+		include(scriptName);
 	else
 		throw new Error("The hook "+monkeyscript.hookName+" does not exist");
 } else if ( monkeyscript.scriptName ) {
 	if ( monkeyscript.scriptName.startsWith('javascript:') )
 		eval(monkeyscript.scriptName.substr('javascript:'.length));
 	else
-		exec(monkeyscript.scriptName);
+		include(monkeyscript.scriptName);
 } else
 	throw new Error("No script specified");
 
