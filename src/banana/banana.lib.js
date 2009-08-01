@@ -1,20 +1,37 @@
 // -*- coding: UTF-8 -*-
+{
 
-function banana(q) {
+let store;
+let getInfo = function(q) {
 	if ( global.banana && global.banana.init )
 		banana.init();
+	var ns = q;
+	// ToDo: Version comparison
+	var versions = Object.keys(store[ns]);
+	versions.sort(); // ToDo: Use a proper version sort library
+	var version = versions[versions.length-1];
+	
+	return store[ns][version];
+};
+let bananaMeta = function(info) {
+	
+	
+};
+
+function banana(q) {
+	var info = getInfo(q);
+	
+	
 	
 }
 banana.info = function(q) {
-	if ( global.banana && global.banana.init )
-		banana.init();
-	
+	return bananaMeta(getInfo(q));
 };
 banana.registries = {};
 banana.registries.local = [];
 banana.registries.global = [];
 banana.init = function() {
-	var store = banana._store = {};
+	store = {};
 	banana.registries.local.concat(banana.registries.global)
 		.forEach(function(registryLocation) {
 			var json = JSON.parse(Kernel.readFile(registryLocation));
@@ -30,3 +47,4 @@ banana.init = function() {
 	delete banana.init;
 };
 
+}
