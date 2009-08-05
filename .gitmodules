@@ -1,3 +1,6 @@
 [submodule "lib/wrench"]
 	path = lib/wrench
 	url = git://github.com/dantman/wrench.git
+[submodule "lib/rhino"]
+	path = lib/rhino
+	url = git://github.com/earl/rhino-mirror.git
