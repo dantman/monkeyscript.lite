@@ -1,0 +1,10 @@
+{
+	"name": "Path",
+	"short": "path",
+	"namespace": "misc.path",
+	"oneversion": true,
+	"monkeypatch": true,
+	"components": [
+		"Path.js"
+	]
+}

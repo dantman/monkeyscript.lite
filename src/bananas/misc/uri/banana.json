@@ -1,0 +1,10 @@
+{
+	"name": "URI",
+	"short": "uri",
+	"namespace": "misc.uri",
+	"oneversion": true,
+	"monkeypatch": true,
+	"components": [
+		"URI.js"
+	]
+}

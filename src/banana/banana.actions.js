@@ -8,7 +8,7 @@ actions.collect = function(registryLoc, bananaLocs) {
 	
 	var bananas = {};
 	
-	const required = ['namespace', 'name', 'short'];
+	const required = ['namespace', 'name', 'shortname'];
 	pick:
 		for ( var i = 0; i < bananaLocs.length; i++ ) {
 			var bananaLoc = bananaLocs[i];
@@ -46,7 +46,7 @@ actions.collect = function(registryLoc, bananaLocs) {
 			var version = json.version || "";
 			
 			plantation.name = json.name;
-			plantation['short'] = json['short'];
+			plantation.shortname = json.shortname;
 			plantation.path = Kernel.fs.absoluteDirname(bananaLoc);
 			if ( json.components )
 				json.components.forEach(function(component) {

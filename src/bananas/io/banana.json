@@ -2,6 +2,7 @@
 	"name": "IO",
 	"short": "io",
 	"namespace": "io",
+	"oneversion": true,
 	"components": [
 		"File.js",
 		"Stream.js"
