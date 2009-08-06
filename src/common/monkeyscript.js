@@ -45,9 +45,7 @@ var monkeyscript = {
 // Setup global Error objects
 var IOError = Kernel.newError("IOError");
 
-//for each( let rc in monkeyscript.rc ) // Rhino's __iterator__ is broken atm
-for ( let k in monkeyscript.rc ) {
-	var rc = monkeyscript.rc[k];
+for each( let rc in monkeyscript.rc ) {
 	try { include.ifExists(rc); }
 	// Other errors will be printed, but still not affect running the script
 	catch( e ) { print(e); }
