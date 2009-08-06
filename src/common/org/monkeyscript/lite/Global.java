@@ -27,6 +27,7 @@ public class Global extends ImporterTopLevel {
 		boolean sealed = cx.isSealed();
 		initStandardObjects( cx, sealed );
 		defineProperty("global", this, ScriptableObject.DONTENUM | ScriptableObject.READONLY);
+		Kernel.init( this, sealed );
 		NativeBlob.init( this, sealed );
 		//NativeBuffer.init( this, sealed );
 		String[] functions = {
