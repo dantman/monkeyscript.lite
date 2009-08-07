@@ -1,6 +1,5 @@
 // -*- coding: UTF-8 -*-
-
-var actions = {};
+global.actions = {};
 
 actions.collect = function(registryLoc, bananaLocs) {
 	if ( !Kernel.fs.canWrite(registryLoc) )
