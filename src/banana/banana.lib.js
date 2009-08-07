@@ -34,7 +34,7 @@ function banana(q) {
 		var fn = Kernel.globalExecWrapped(script, '(function(_native, banana, self, exports) {', '//*/\n;return exports;\n})');
 		if ( !isFunction(fn) )
 			throw Error("Something went wrong when loading "+q+" script "+script);
-		//exports = fn.call(self, banana, self, exports);
+		//exports = fn.call(self, _native, banana, self, exports);
 		exports = fn.call(undefined, _native, banana, self, exports);
 	}
 	if ( !isObject(exports) )
