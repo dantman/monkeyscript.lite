@@ -20,6 +20,7 @@ public class ScriptReader extends Reader {
 	private String charset;
 	private int skip = 0;
 	private int firstLine = 1;
+	private char[] prefix, suffix;
 	private static final byte[] BOM_UTF8 = new byte[] { (byte)0xEF, (byte)0xBB, (byte)0xBF };
 	private static final byte[] BOM_UTF16LE = new byte[] { (byte)0xFF, (byte)0xFE };
 	private static final byte[] BOM_UTF16BE = new byte[] { (byte)0xFE, (byte)0xFF };
@@ -35,7 +36,26 @@ public class ScriptReader extends Reader {
 		init();
 	}
 	
+	public ScriptReader(InputStream is, String prefix, String suffix) throws IOException, UnsupportedEncodingException {
+		this.buf = new BufferedInputStream(is);
+		this.prefix = (prefix+"\n").toCharArray();
+		this.suffix = ("\n"+suffix).toCharArray();
+		init();
+	}
+	
+	public ScriptReader(InputStream is, String prefix, String suffix, String charset) throws IOException, UnsupportedEncodingException {
+		this.buf = new BufferedInputStream(is);
+		this.prefix = (prefix+"\n").toCharArray();
+		this.suffix = ("\n"+suffix).toCharArray();
+		this.charset = charset;
+		init();
+	}
+	
 	private void init() throws IOException, UnsupportedEncodingException {
+		if ( prefix != null ) {
+			firstLine += (new String(prefix)).split("\n").length-1;
+		}
+		
 		BufferedInputStream is = this.buf;
 		String charset = "UTF-8"; // Default charsets (ToDo: Use global.monkeyscript.defaultEncoding instead)
 		is.mark(255); // Mark the start of the file before we look for charset info
@@ -73,14 +93,62 @@ public class ScriptReader extends Reader {
 		cread = new BufferedReader(new InputStreamReader(this.buf, this.charset));
 	}
 	
+	private boolean hitPrefixEnd = false;
+	private boolean hitReaderEnd = false;
+	private boolean hitSuffixEnd = false;
+	private int mOff = 0;
+	/**
+	 * Basic read method implemented for the Reader
+	 * 
+	 * @param char[] cbuf Character buffer to read into
+	 * @param int    off  Offset from the start of the cbuf to read into
+	 * @param len    len  Lenght from the offset to limit reading into the cbuf
+	 * @return int The number of characters that was read, or -1 if EOF
+	 */
 	public int read(char[] cbuf, int off, int len) throws IOException {
-		int readLength = cread.read(cbuf, off, len);
-		// This section of code replaces characters in the read buffer with spaces
-		// if they are below the skip threshold
-		for (int i = off; i < skip; i++) {
-			cbuf[i] = ' ';
+		// Read from prefix
+		if ( !hitPrefixEnd && prefix != null && prefix.length > 0 ) {
+			int i = 0;
+			for (; i < len && i+mOff < prefix.length; i++) {
+				cbuf[off+i] = prefix[i+mOff];
+			}
+			mOff += i;
+			if ( mOff >= prefix.length ) {
+				mOff = 0;
+				hitPrefixEnd = true;
+			}
+			return i;
 		}
-		return readLength;
+		// Read from reader
+		if ( !hitReaderEnd ) {
+			int readLength = cread.read(cbuf, off, len);
+			if ( readLength == -1 ) {
+				mOff = 0;
+				hitReaderEnd = true;
+			} else {
+				for (int i = 0; mOff+i < skip && i < readLength; i++) {
+					// This section of code replaces characters in the read buffer with spaces
+					// if they are below the skip threshold
+					cbuf[off+i] = ' ';
+				}
+				mOff += readLength;
+				return readLength;
+			}
+		}
+		// Read from suffix
+		if ( !hitSuffixEnd && suffix != null && suffix.length > 0 ) {
+			int i = 0;
+			for (; i < len && i+mOff < suffix.length; i++) {
+				cbuf[off+i] = suffix[i+mOff];
+			}
+			mOff += i;
+			if ( mOff >= suffix.length ) {
+				mOff = 0;
+				hitSuffixEnd = true;
+			}
+			return i;
+		}
+		return -1;
 	}
 	
 	public void close() throws IOException {
