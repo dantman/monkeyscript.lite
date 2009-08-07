@@ -1,6 +1,8 @@
 // -*- coding: UTF-8 -*-
 {
 
+var LoadError = Kernel.newError("LoadError");
+
 let store;
 let getInfo = function(q) {
 	if ( banana.init )
@@ -17,9 +19,23 @@ let getInfo = function(q) {
 
 function banana(q) {
 	var info = getInfo(q);
+	if ( !info )
+		throw new LoadError("Failed to load "+q);
+	var self = new banana.Meta(info);
 	
+	var exports = {};
+	for each ( script in self.scripts ) {
+		// var arguments = global.arguments;?
+		var fn = Kernel.globalExecWrapped(script, '(function(banana, self, exports) {', '//*/\n;return exports;\n})');
+		if ( !isFunction(fn) )
+			throw Error("Something went wrong when loading "+q+" script "+script);
+		//exports = fn.call(self, banana, self, exports);
+		exports = fn.call(undefined, banana, self, exports);
+	}
+	if ( !isObject(exports) )
+		throw Error("Something went wrong when loading "+q+" one of the scripts screwed up the exports object");
 	
-	
+	return exports;
 }
 banana.meta = function(q) {
 	return new banana.Meta(getInfo(q));
