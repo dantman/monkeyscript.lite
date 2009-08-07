@@ -1,6 +1,6 @@
 {
 	"name": "IO",
-	"short": "io",
+	"shortname": "io",
 	"namespace": "io",
 	"oneversion": true,
 	"components": [

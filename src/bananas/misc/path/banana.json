@@ -1,6 +1,6 @@
 {
 	"name": "Path",
-	"short": "path",
+	"shortname": "path",
 	"namespace": "misc.path",
 	"oneversion": true,
 	"monkeypatch": true,

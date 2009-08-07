@@ -1,6 +1,6 @@
 {
 	"name": "URI",
-	"short": "uri",
+	"shortname": "uri",
 	"namespace": "misc.uri",
 	"oneversion": true,
 	"monkeypatch": true,
