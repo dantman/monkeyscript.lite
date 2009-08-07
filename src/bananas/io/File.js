@@ -64,3 +64,5 @@ File.open = function(path) {
 	
 };
 
+exports.File = File;
+
