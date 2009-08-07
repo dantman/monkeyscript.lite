@@ -70,6 +70,7 @@ public class Global extends ImporterTopLevel {
 	protected static final int NOT_INCLUDED  = 8;
 	
 	private static Object runScript( Context cx, Scriptable thisObj, Object[] args, Function funObj, int flags ) {
+		Scriptable scope = ScriptableObject.getTopLevelScope((ScriptableObject)funObj);
 		if ( args.length == 0 )
 			throw ScriptRuntime.typeError("No script name");
 		String scriptFileName = (String)args[0];
@@ -77,17 +78,17 @@ public class Global extends ImporterTopLevel {
 		try {
 			if ( scriptFile.canRead() ) {
 				if ( (flags & NOT_INCLUDED ) != 0 ) {
-					Scriptable included = getIncluded(thisObj);
+					Scriptable included = getIncluded(scope);
 					if ( ScriptableObject.callMethod(included, "has", new Object[] { scriptFile.getCanonicalPath() }) == Boolean.TRUE )
 						return Boolean.TRUE;
 				}
 				FileInputStream is = new FileInputStream(scriptFile);
 				ScriptReader in = new ScriptReader(is);
 				if ( (flags & ADD_INCLUDED) != 0 ) {
-					Scriptable included = getIncluded(thisObj);
+					Scriptable included = getIncluded(scope);
 					ScriptableObject.callMethod(included, "push", new Object[] { scriptFile.getCanonicalPath() });
 				}
-				Object res = cx.evaluateReader( thisObj, in, scriptFile.getAbsolutePath(), in.getFirstLine(), null );
+				Object res = cx.evaluateReader( scope, in, scriptFile.getAbsolutePath(), in.getFirstLine(), null );
 				return (flags & SCRIPT_RESULT) != 0 ? res : Boolean.TRUE;
 			} else {
 				if ( (flags & IF_EXISTS) != 0 )
