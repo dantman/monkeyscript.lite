@@ -1,0 +1,8 @@
+{
+	"name": "CanvasWindow",
+	"shortname": "canvaswindow",
+	"namespace": "graphics.canvas.window",
+	"components": [
+		"CanvasWindow.js"
+	]
+}
