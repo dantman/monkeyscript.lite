@@ -47,6 +47,7 @@ Stream.EOF = {eof:true};
 Stream.prototype.rewind = function() {
 	return this.position = 0;
 };
+
 Stream.prototype.__defineGetter__('text', function() {
 	this.encoding.lc !== 'binary';
 });
@@ -71,6 +72,21 @@ Stream.prototype.yank = function(len) {
 	} while( buf.length < max );
 	
 	return buf.valueOf(); // valueOf returns String for text mode, and Blob for binary mode.
+};
+
+Stream.prototype.copy = function(from) {
+	if(from instanceof Stream) {
+		for(;;) {
+			var chunk = from.read(Infinity);
+			if ( !chunk.length )
+				break;
+			while( chunk.length )
+				chunk = this.write(chunk);
+		}
+	} else {
+		while( from.length )
+			from = this.write(from);
+	}
 };
 
 exports.Stream = Stream;
