@@ -89,6 +89,9 @@ delete global.includeIfExists;
 		get version() {
 			return sysprop("os.version");
 		},
+		get encoding() {
+			return sysprop("file.encoding") || "UTF-8";
+		},
 		get fileSeparator() {
 			return sysprop("file.separator");
 		},

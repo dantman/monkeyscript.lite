@@ -5,6 +5,8 @@
 	"oneversion": true,
 	"components": [
 		"File.js",
+		"FilePath.js",
 		"Stream.js"
-	]
+	],
+	"depends": ["misc.path"]
 }

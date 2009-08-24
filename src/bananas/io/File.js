@@ -48,20 +48,108 @@ File.prototype.open = function() {
 			var block = args.shift();
 		}
 	}
+	options.append = !!options.append;
 	if ( options.append ) options.write = true;
 	if ( options.write && !options.hasOwnProperty('create') ) options.create = true;
 	if ( !options.hasOwnProperty('truncate') ) options.truncate = true; // Defaults to true
 	if ( !options.hasOwnProperty('text') ) options.text = true; // Defaults to true
-	if ( options.encoding && options.encoding.lc !== 'binary' ) {
-		options.text = true;
+	if ( options.encoding ) {
+		if ( options.encoding.lc === 'binary' ) {
+			options.text = false;
+			options.encoding = 'binary';
+		} else {
+			options.text = true;
+		}
 	} else {
-		//options.text = false;
-		//options.encoding = 'binary';
+		if ( options.text !== false ) {
+			options.encoding = Kernel.os.encoding;
+			options.text = true;
+		} else {
+			options.encoding = 'binary';
+			options.text = false;
+		}
 	}
-	options.encoding = options.encoding || Kernel.systemEncoding;
+	//options.encoding = options.encoding || Kernel.systemEncoding;
 	
 	function doOpen() {
-		
+		// Whoops, we have rhino specific stuff here we need to move out
+		var rb, rt, wb, wt, o = {};
+		o.contentConstructor = function() {
+			return options.text ? String : Blob;
+		};
+		if ( options.read ) {
+			var rb = new java.io.FileInputStream(this._file);
+			if ( !options.text ) {
+				o.read = function(len, bufNoSkip) {
+					if ( len === Infinity )
+						len = 512;
+					if ( !bufNoSkip )
+						return rb.skip(len);
+					var bbuf = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, len);
+					var rLen = rb.read(bbuf, 0, len);
+					return Blob(java.util.Arrays.copyOf(bbuf, rLen));
+				};
+			} else {
+				var rt = new java.io.BufferedReader(new java.io.InputStreamReader(rb, options.encoding));
+				o.read = function(len, bufNoSkip) {
+					if ( len === Infinity )
+						len = 512;
+					if ( !bufNoSkip )
+						return rb.skip(len);
+					var cbuf = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, 512);
+					var rLen = rb.read(cbuf, 0, len);
+					return String(new java.lang.String(cbuf, 0, rLen));
+				};
+			}
+		}
+		if ( options.write ) {
+			var wb = new java.io.FileOutputStream(this._file, options.append);
+			if ( options.truncate ) {
+				// Truncate when opening
+				wb.getChannel().truncate(0);
+			}
+			function maybeSync() {
+				if ( options.sync ) {
+					o.flush();
+					wb.getFD().sync();
+				}
+			}
+			if ( !options.text ) {
+				o.write = function(data) {
+					data = data.valueOf();
+					if(!(data instanceof Blob))
+						throw new TypeError();
+					var bbuf = data.toJavaByteArray(); // Extension for rhino environment
+					wb.write(bbuf);
+					maybeSync();
+					return data.length;
+				};
+				o.flush = function() {
+					wb.flush();
+				};
+			} else {
+				var wt = new java.io.BufferedWriter(new java.io.OutputStreamWriter(wb, options.encoding));
+				o.write = function(data) {
+					data = data.valueOf();
+					if(!isString(data))
+						throw new TypeError();
+					var cbuf = data.toJavaCharArray(); // Extension for rhino environment
+					wt.write(cbuf);
+					maybeSync();
+					return data.length;
+				};
+				o.flush = function() {
+					wt.flush();
+				};
+			}
+		}
+		o.close = function() {
+			if ( rt ) rt.close();
+			else if ( rb ) rb.close();
+			if ( wt ) wt.close();
+			else if ( wb ) wb.close();
+		};
+		return new Stream(o);
 	}
 	
 	if ( block ) {

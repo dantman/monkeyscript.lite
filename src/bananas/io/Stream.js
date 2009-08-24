@@ -1,28 +1,38 @@
 // -*- coding: UTF-8 -*-
 
-function read(fnRead, len) {
+function read(fnRead, len, bufNoSkip) {
 	if ( len === 0 )
 		throw new TypeError("Cannot read nothing from a stream");
 	
 	if ( !len ) {
 		var chunk, buf = new Buffer();
 		buf.encoding = this.encoding;
-		while( chunk = read.call(this, fnRead, Infinity) )
+		while( chunk = read.call(this, fnRead, Infinity, bufNoSkip) )
 			buf.append(chunk);
 		var data = buf.valueOf();
 	} else {
-		var data = fnRead(this.position, len);
+		var data = fnRead.call(this, len, bufNoSkip);
 	}
 	this.position += data.length;
 	return data;
 }
 
 function wrapRead(fnRead) {
-	return function(len) {
+	return function(len, bufNoSkip) {
 		try {
-			return read.call(this, fnRead, len);
+			return read.call(this, fnRead, len, bufNoSkip);
 		} catch ( e if e === Stream.EOF ) {
 			return this.text ? "" : new Blob();
+		}
+	};
+}
+
+function wrapSkip(fnRead) {
+	return function(len) {
+		try {
+			return read.call(this, fnRead, len, false);
+		} catch ( e if e === Stream.EOF ) {
+			return this.contentConstructor();
 		}
 	};
 }
@@ -31,14 +41,19 @@ function Stream(obj) {
 	if (!(this instanceof Stream))
 		return new Stream(obj);
 	
-	if ( isFunction(obj.read) )
+	if ( isFunction(obj.contentConstructor) )
+		this.__defineGetter('contentConstructor', obj.contentConstructor);
+	else if ( obj.contentConstructor === String || obj.contentConstructor === Blob )
+		this.__defineGetter('contentConstructor', function() { return obj.contentConstructor });
+	else
+		throw new TypeError("Object did not contain contentConstructor function");
+	if ( isFunction(obj.read) ) {
 		this.read = wrapRead(obj.read);
+		this.skip = wrapSkip(obj.read);
+	}
 	if ( isFunction(obj.write) )
 		this.write = wrapWrite(obj.write);
 	
-	this.__defineGetter__('encoding', function() {
-		return obj.encoding();
-	});
 	this.position = 0;
 }
 
@@ -47,10 +62,6 @@ Stream.EOF = {eof:true};
 Stream.prototype.rewind = function() {
 	return this.position = 0;
 };
-
-Stream.prototype.__defineGetter__('text', function() {
-	this.encoding.lc !== 'binary';
-});
 
 Stream.prototype.yank = function(len) {
 	if ( !this.read ) // Error when read not implemented
