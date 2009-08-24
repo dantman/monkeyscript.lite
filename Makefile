@@ -47,7 +47,7 @@ ${DIST_DIR}/lib/jake:
 
 # Copy things to dist dir
 .PHONY: dist-deps
-dist-deps: alldirs ${DIST_DIR}/bin/monkeyscript ${DIST_DIR}/lib/js.jar ${DIST_DIR}/lib/jline.jar dist-dep-banana dist-dep-jake
+dist-deps: alldirs ${DIST_DIR}/bin/monkeyscript ${DIST_DIR}/lib/js.jar ${DIST_DIR}/lib/jline.jar ${DIST_DIR}/lib/jna.jar dist-dep-banana dist-dep-jake
 ${DIST_DIR}/bin/monkeyscript: ${DIST_DIR}/bin
 	cp ${SRC_DIR}/common/monkeyscript ${DIST_DIR}/bin/
 	-chmod +x ${DIST_DIR}/bin/monkeyscript
@@ -55,6 +55,8 @@ ${DIST_DIR}/lib/js.jar: ${DIST_DIR}/lib ${LIB_DIR}/js.jar
 	cp ${LIB_DIR}/js.jar ${DIST_DIR}/lib/
 ${DIST_DIR}/lib/jline.jar: ${DIST_DIR}/lib ${LIB_DIR}/jline-0.9.94.jar
 	cp ${LIB_DIR}/jline-0.9.94.jar ${DIST_DIR}/lib/jline.jar
+${DIST_DIR}/lib/jna.jar: ${DIST_DIR}/lib ${LIB_DIR}/jna.jar
+	cp ${LIB_DIR}/jna.jar ${DIST_DIR}/lib/
 ## Banana
 .PHONY: dist-dep-banana
 dist-dep-banana: $(BANANA_FILES) ${DIST_DIR}/bin/banana
