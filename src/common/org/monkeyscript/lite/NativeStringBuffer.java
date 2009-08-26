@@ -9,6 +9,7 @@ final class NativeStringBuffer extends AbstractBuffer {
 	
 	static final long serialVersionUID = 1251247849L;
 	
+	protected static final String TYPE_TAG = "String";
 	private static final Object STRING_BUFFER_TAG = "StringBuffer";
 	
 	static void init(Scriptable proto, Scriptable scope, boolean sealed) {
@@ -38,64 +39,6 @@ final class NativeStringBuffer extends AbstractBuffer {
 	
 	static private Object quickNewNativeStringBuffer(Context cx, Scriptable scope, Object target) {
 		return ScriptRuntime.newObject(cx, scope, "StringBuffer", new Object[] { target });
-	}
-	
-	@Override
-	public String getClassName() {
-		return "StringBuffer";
-	}
-	
-	private static final int
-		Id_length                    =  1,
-		Id_contentConstructor        =  2,
-		MAX_INSTANCE_ID              =  2;
-	
-	@Override
-	protected int getMaxInstanceId() {
-		return MAX_INSTANCE_ID;
-	}
-	
-	@Override
-	protected int findInstanceIdInfo(String s) {
-		if (s.equals("length")) {
-			return instanceIdInfo(DONTENUM, Id_length);
-		}
-		if (s.equals("contentConstructor")) {
-			return instanceIdInfo(DONTENUM|READONLY|PERMANENT, Id_contentConstructor);
-		}
-		return super.findInstanceIdInfo(s);
-	}
-	
-	@Override
-	protected String getInstanceIdName(int id) {
-		if (id == Id_length) { return "length"; }
-		if (id == Id_contentConstructor) { return "contentConstructor"; }
-		return super.getInstanceIdName(id);
-	}
-	
-	@Override
-	protected Object getInstanceIdValue(int id) {
-		if (id == Id_length) {
-			return ScriptRuntime.wrapInt(chars.length);
-		}
-		if (id == Id_contentConstructor) {
-			return ScriptRuntime.getTopLevelProp(this.getParentScope(), "String");
-		}
-		return super.getInstanceIdValue(id);
-	}
-	
-	@Override
-	protected void setInstanceIdValue(int id, Object value) {
-		if (id == Id_length) {
-			setLength(value);
-			return;
-		}
-		super.setInstanceIdValue(id, value);
-	}
-	
-	@Override
-	protected void fillConstructorProperties(IdFunctionObject ctor) {
-		super.fillConstructorProperties(ctor);
 	}
 	
 	@Override
@@ -151,13 +94,13 @@ final class NativeStringBuffer extends AbstractBuffer {
 	
 	@Override
 	public String toString() {
-		return new String(chars, length).intern();
+		return new String(chars, 0, (int)length).intern();
 	}
 	
 	/* Make array-style property lookup work for strings. */
 	@Override
 	public Object get(int index, Scriptable start) {
-		if (0 <= index && index < string.length()) {
+		if (0 <= index && index < length) {
 			return toString().substring(index, index + 1);
 		}
 		return super.get(index, start);
@@ -165,15 +108,16 @@ final class NativeStringBuffer extends AbstractBuffer {
 	
 	@Override
 	public void put(int index, Scriptable start, Object value) {
-		if (0 <= index && index < string.length()) {
+		if (0 <= index && index < length) {
 			// @todo
 			return;
 		}
 		super.put(index, start, value);
 	}
 	
+	protected void truncateRaw(int len) {
+		chars = java.util.Arrays.copyOf(chars, len);
+	}
 	
-	
-	private long length;
 	private char[] chars;
 }

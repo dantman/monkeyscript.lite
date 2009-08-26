@@ -239,7 +239,7 @@ final class NativeBlob extends IdScriptableObject {
 		return (NativeBlob)thisObj;
 	}
 	
-	private static byte[] nativeConvert(Object o) {
+	protected static byte[] nativeConvert(Object o) {
 		//if ( o.getClass() == byte.class )
 		//	return new byte[] { (byte)o };
 		if ( o.getClass() == byte[].class )
@@ -275,7 +275,7 @@ final class NativeBlob extends IdScriptableObject {
 	}
 	
 	// tlrobinson notes  (b >= 0) ? b : -1 * ((b ^ 0xFF) + 1)
-	private static int byteToInt(byte b) {
+	protected static int byteToInt(byte b) {
 		Byte bb = new Byte(b);
 		int bi = bb.intValue();
 		Byte byteMin = new Byte(Byte.MIN_VALUE);
@@ -283,7 +283,7 @@ final class NativeBlob extends IdScriptableObject {
 		return bi-bmin;
 	}
 	
-	private static byte intToByte(int i) {
+	protected static byte intToByte(int i) {
 		int bmax = Byte.MAX_VALUE-Byte.MIN_VALUE;//(new Byte(Byte.MAX_VALUE-Byte.MIN_VALUE)).intValue();
 		int bmin = (new Byte(Byte.MIN_VALUE)).intValue();
 		if ( i > bmax )

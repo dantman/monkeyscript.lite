@@ -12,9 +12,9 @@ final class NativeBuffer extends IdScriptableObject {
 	private static final Object BUFFER_TAG = "Buffer";
 	
 	static void init(Scriptable scope, boolean sealed) {
-		NativeBuffer obj = new NativeBuffer;
+		NativeBuffer obj = new NativeBuffer();
 		IdFunctionObject ctor = obj.exportAsJSClass(MAX_PROTOTYPE_ID, scope, sealed);
-		Scriptable proto = ctor.getClassPrototype;
+		Scriptable proto = (Scriptable)ScriptableObject.getProperty(ctor, "prototype");
 		NativeBlobBuffer.init(proto, scope, sealed);
 		NativeStringBuffer.init(proto, scope, sealed);
 	}
@@ -67,11 +67,13 @@ final class NativeBuffer extends IdScriptableObject {
 						if (inNewExpr && args.length == 0)
 							jsConstructor(cx, scope, args);
 						if (args.length > 0) {
-							if ( arg[0] instanceof ScriptableObject ) {
-								if ( arg[0].getClassName().equals("String") || arg[0].getClassName().equals("Blob") ) {
-									String constructorName = arg[0].getClassName() + "Buffer";
+							if ( args[0] instanceof ScriptableObject ) {
+								ScriptableObject o = (ScriptableObject)args[0];
+								String c = o.getClassName();
+								if ( c.equals("String") || c.equals("Blob") ) {
+									String constructorName = c + "Buffer";
 									return ScriptRuntime.newObject(cx, scope, constructorName, args);
-								} else if ( arg[0] == ScriptRuntime.StringClass ) {
+								} else if ( o == ScriptRuntime.StringClass ) {
 									Object[] ctorArgs = new Object[0];
 									if ( args.length > 1 ) {
 										ctorArgs = new Object[] { args[1] };
@@ -102,5 +104,34 @@ final class NativeBuffer extends IdScriptableObject {
 			throw incompatibleCallError(f);
 		return (NativeBuffer)thisObj;
 	}
+	
+// #string_id_map#
+	
+	@Override
+	protected int findPrototypeId(String s) {
+		int id;
+// #generated# Last update: 2009-08-25 21:01:14 PDT
+        L0: { id = 0; String X = null; int c;
+            int s_length = s.length();
+            if (s_length==8) {
+                c=s.charAt(3);
+                if (c=='o') { X="toSource";id=Id_toSource; }
+                else if (c=='t') { X="toString";id=Id_toString; }
+            }
+            else if (s_length==11) { X="constructor";id=Id_constructor; }
+            if (X!=null && X!=s && !X.equals(s)) id = 0;
+            break L0;
+        }
+// #/generated#
+		return id;
+	}
+	
+    private static final int
+		Id_constructor               = 1,
+		Id_toString                  = 2,
+		Id_toSource                  = 3,
+		MAX_PROTOTYPE_ID             = 3;
+	
+// #/string_id_map#
 	
 }
