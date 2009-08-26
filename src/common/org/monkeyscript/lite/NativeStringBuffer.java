@@ -9,8 +9,9 @@ final class NativeStringBuffer extends AbstractBuffer {
 	
 	static final long serialVersionUID = 1251247849L;
 	
-	protected static final String TYPE_TAG = "String";
 	private static final Object STRING_BUFFER_TAG = "StringBuffer";
+	
+	protected String getTypeTag() { return "String"; }
 	
 	static void init(Scriptable proto, Scriptable scope, boolean sealed) {
 		NativeStringBuffer obj = NativeStringBuffer.newEmpty();
@@ -88,6 +89,16 @@ final class NativeStringBuffer extends AbstractBuffer {
 				}
 				return super.execIdCall(f, cx, scope, thisObj, args);
 			}
+	}
+	
+	protected Object jsConstructor(Context cx, Scriptable scope, Object[] args) {
+		if ( args.length > 0 ) {
+			if ( args[0] instanceof Number )
+				return new NativeStringBuffer(ScriptRuntime.toInt32(args[0]));
+			return new NativeStringBuffer(MonkeyScriptRuntime.toRealString(args[0]));
+		} else {
+			return NativeStringBuffer.newEmpty();
+		}
 	}
 	
 	@Override

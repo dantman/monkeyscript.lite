@@ -29,7 +29,7 @@ public class Global extends ImporterTopLevel {
 		defineProperty("global", this, ScriptableObject.DONTENUM | ScriptableObject.READONLY);
 		Kernel.init( this, sealed );
 		NativeBlob.init( this, sealed );
-		//NativeBuffer.init( this, sealed );
+		NativeBuffer.init( this, sealed );
 		String[] functions = {
 			"exec",
 			"globalExec",

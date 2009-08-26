@@ -9,8 +9,9 @@ final class NativeBlobBuffer extends AbstractBuffer {
 	
 	static final long serialVersionUID = 1251247849L;
 	
-	protected static final String TYPE_TAG = "Blob";
 	private static final Object BLOB_BUFFER_TAG = "BlobBuffer";
+	
+	protected String getTypeTag() { return "Blob"; }
 	
 	static void init(Scriptable proto, Scriptable scope, boolean sealed) {
 		NativeBlobBuffer obj = NativeBlobBuffer.newEmpty();
@@ -93,17 +94,21 @@ final class NativeBlobBuffer extends AbstractBuffer {
 			}
 	}
 	
-	@Override
-	public String toString() {
-		return "[BlobBuffer length=" + length + "]";
+	protected Object jsConstructor(Context cx, Scriptable scope, Object[] args) {
+		if ( args.length > 0 ) {
+			if ( args[0] instanceof Number )
+				return new NativeBlobBuffer(ScriptRuntime.toInt32(args[0]));
+			return new NativeBlobBuffer(MonkeyScriptRuntime.toByteArray(args[0]));
+		} else {
+			return NativeBlobBuffer.newEmpty();
+		}
 	}
 	
 	/* Make array-style property lookup work for strings. */
 	@Override
 	public Object get(int index, Scriptable start) {
 		if (0 <= index && index < length) {
-			// @todo
-			return ;
+			return MonkeyScriptRuntime.newBlob(bytes[index], start);
 		}
 		return super.get(index, start);
 	}
@@ -111,6 +116,8 @@ final class NativeBlobBuffer extends AbstractBuffer {
 	@Override
 	public void put(int index, Scriptable start, Object value) {
 		if (0 <= index && index < length) {
+			
+			
 			// @todo
 			return;
 		}

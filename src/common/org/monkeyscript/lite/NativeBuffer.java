@@ -43,7 +43,7 @@ final class NativeBuffer extends IdScriptableObject {
 		String s;
 		int arity;
 		switch (id) {
-			case Id_constructor:       arity=1; s="constructor";       break;
+			case Id_constructor:       arity=2; s="constructor";       break;
 			case Id_toString:          arity=0; s="toString";          break;
 			case Id_toSource:          arity=0; s="toSource";          break;
 			default: throw new IllegalArgumentException(String.valueOf(id));
@@ -73,7 +73,7 @@ final class NativeBuffer extends IdScriptableObject {
 								if ( c.equals("String") || c.equals("Blob") ) {
 									String constructorName = c + "Buffer";
 									return ScriptRuntime.newObject(cx, scope, constructorName, args);
-								} else if ( o == ScriptRuntime.StringClass ) {
+								} else if ( o.getClass() == ScriptRuntime.StringClass ) {
 									Object[] ctorArgs = new Object[0];
 									if ( args.length > 1 ) {
 										ctorArgs = new Object[] { args[1] };
@@ -103,6 +103,10 @@ final class NativeBuffer extends IdScriptableObject {
 		if (!(thisObj instanceof NativeBuffer))
 			throw incompatibleCallError(f);
 		return (NativeBuffer)thisObj;
+	}
+	
+	private static Object jsConstructor(Context cx, Scriptable scope, Object[] args) {
+		return new NativeBuffer();
 	}
 	
 // #string_id_map#

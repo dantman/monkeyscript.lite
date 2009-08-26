@@ -7,8 +7,7 @@ import org.mozilla.javascript.*;
 // org.mozilla.javascript.NativeString was used as a reference for implementation of this
 abstract class AbstractBuffer extends IdScriptableObject {
 	
-	// Subclass should instance this as either String or Blob
-	protected static String TYPE_TAG = "Abstract";
+	abstract protected String getTypeTag();
 	
 	protected static final int
 		Id_length                    =  1,
@@ -40,7 +39,12 @@ abstract class AbstractBuffer extends IdScriptableObject {
 	
 	@Override
 	public String getClassName() {
-		return TYPE_TAG + "Buffer";
+		return getTypeTag() + "Buffer";
+	}
+	
+	@Override
+	public String toString() {
+		return "[" + getTypeTag() + "Buffer length=" + length + "]";
 	}
 	
 	@Override
@@ -49,7 +53,7 @@ abstract class AbstractBuffer extends IdScriptableObject {
 			return ScriptRuntime.wrapInt((int)length);
 		}
 		if (id == Id_contentConstructor) {
-			return ScriptRuntime.getTopLevelProp(this.getParentScope(), TYPE_TAG);
+			return ScriptRuntime.getTopLevelProp(this.getParentScope(), getTypeTag());
 		}
 		return super.getInstanceIdValue(id);
 	}
@@ -82,6 +86,8 @@ abstract class AbstractBuffer extends IdScriptableObject {
 				throw new IllegalArgumentException(String.valueOf(id));
 			}
 	}
+	
+	abstract protected Object jsConstructor(Context cx, Scriptable scope, Object[] args);
 	
 	protected static Object js_equals(Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
 		if ( thisObj instanceof AbstractBuffer )
