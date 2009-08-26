@@ -68,6 +68,29 @@ abstract class AbstractBuffer extends IdScriptableObject {
 		super.fillConstructorProperties(ctor);
 	}
 	
+    public Object execIdCall(IdFunctionObject f, Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
+		int id = f.methodId();
+		again:
+			for(;;) {
+				switch (id) {
+					case Id_toString:
+						return thisObj.toString();
+					
+					case Id_equals:
+						return js_equals(cx, scope, thisObj, args);
+				}
+				throw new IllegalArgumentException(String.valueOf(id));
+			}
+	}
+	
+	protected static Object js_equals(Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
+		if ( thisObj instanceof AbstractBuffer )
+			return ScriptRuntime.wrapBoolean(((AbstractBuffer)thisObj).rawEquals(args[0]));
+		return false;
+	}
+	
+	abstract protected boolean rawEquals(Object obj);
+	
 	protected void setLength(Object len) { setLength(ScriptRuntime.toInt32(len)); }
 	protected void setLength(long len) { setLength((int)len); }
 	protected void setLength(int len) {

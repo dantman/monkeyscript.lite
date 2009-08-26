@@ -78,8 +78,6 @@ final class NativeStringBuffer extends AbstractBuffer {
 						}
 						return jsConstructor(cx, scope, args);
 					}
-					case Id_toString:
-						return thisObj.toString();
 					
 					case Id_valueOf:
 						return realThis(thisObj, f);
@@ -88,7 +86,7 @@ final class NativeStringBuffer extends AbstractBuffer {
 						return "(new StringBuffer(\""+ScriptRuntime.escapeString(realThis(thisObj, f).toString())+"\"))";
 					}
 				}
-				throw new IllegalArgumentException(String.valueOf(id));
+				return super.execIdCall(f, cx, scope, thisObj, args);
 			}
 	}
 	
@@ -115,8 +113,26 @@ final class NativeStringBuffer extends AbstractBuffer {
 		super.put(index, start, value);
 	}
 	
+	protected boolean rawEquals(Object obj) {
+		char[] test = null;
+		if ( obj.getClass() == char[].class )
+			test = (char[])obj;
+		else if ( obj instanceof NativeStringBuffer )
+			test = ((NativeStringBuffer)obj).chars;
+		else if ( obj instanceof String )
+			test = ((String)obj).toCharArray();
+		
+		if ( test != null )
+			return Arrays.equals(chars, test);
+		return false;
+	}
+	
 	protected void truncateRaw(int len) {
-		chars = java.util.Arrays.copyOf(chars, len);
+		chars = Arrays.copyOf(chars, len);
+	}
+	
+	public char[] toCharArray() {
+		return Arrays.copyOf(chars, (int)length);
 	}
 	
 	private char[] chars;

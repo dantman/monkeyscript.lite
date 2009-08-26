@@ -561,5 +561,9 @@ final class NativeBlob extends IdScriptableObject {
 		ConstructorId_concat         = -Id_concat,
 		ConstructorId_slice          = -Id_slice;
 	
+	public byte[] toByteArray() {
+		return Arrays.copyOf(bytes, bytes.length);
+	}
+	
 	private byte[] bytes;
 }

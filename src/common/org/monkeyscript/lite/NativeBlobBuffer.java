@@ -74,8 +74,6 @@ final class NativeBlobBuffer extends AbstractBuffer {
 						}
 						return jsConstructor(cx, scope, args);
 					}
-					case Id_toString:
-						return thisObj.toString();
 					
 					case Id_valueOf:
 						return realThis(thisObj, f);
@@ -91,7 +89,7 @@ final class NativeBlobBuffer extends AbstractBuffer {
 						return sb.toString();
 					}
 				}
-				throw new IllegalArgumentException(String.valueOf(id));
+				return super.execIdCall(f, cx, scope, thisObj, args);
 			}
 	}
 	
@@ -119,8 +117,26 @@ final class NativeBlobBuffer extends AbstractBuffer {
 		super.put(index, start, value);
 	}
 	
+	protected boolean rawEquals(Object obj) {
+		byte[] test = null;
+		if ( obj.getClass() == byte[].class )
+			test = (byte[])obj;
+		else if ( obj instanceof NativeBlobBuffer )
+			test = ((NativeBlobBuffer)obj).bytes;
+		else if ( obj instanceof NativeBlob )
+			test = ((NativeBlob)obj).toByteArray();
+		
+		if ( test != null )
+			return Arrays.equals(bytes, test);
+		return false;
+	}
+	
 	protected void truncateRaw(int len) {
 		bytes = java.util.Arrays.copyOf(bytes, len);
+	}
+	
+	public byte[] toByteArray() {
+		return Arrays.copyOf(bytes, (int)length);
 	}
 	
 	private byte[] bytes;

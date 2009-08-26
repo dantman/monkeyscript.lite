@@ -130,7 +130,8 @@ final class NativeBuffer extends IdScriptableObject {
 		Id_constructor               = 1,
 		Id_toString                  = 2,
 		Id_toSource                  = 3,
-		MAX_PROTOTYPE_ID             = 3;
+		Id_valueOf                   = 4,
+		MAX_PROTOTYPE_ID             = 4;
 	
 // #/string_id_map#
 	
