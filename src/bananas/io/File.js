@@ -12,7 +12,7 @@ function File(path) {
 			configurable: false
 		},
 		_file: {
-			value: new _native.File,
+			value: new _native.File(path),
 			enumerable: false,
 			writable: false,
 			configurable: false
@@ -28,6 +28,9 @@ File.prototype.open = function() {
 		var options = {};
 		var args = Array.slice(arguments);
 		var flags = args.shift();
+		
+		if ( !isString(flags) )
+			throw new TypeError("Mode is not a string");
 		
 		if ( flags.has('r') ) options.read = true;
 		if ( flags.has('w') ) options.write = true;
@@ -219,13 +222,20 @@ Object.defineProperties(File.prototype, {
 	},
 	isWritable: {
 		get: function() {
-			return Boolean(this._file.());
+			if ( this._file.exists() )
+				return Boolean(this._file.canWrite());
+			var p = this._file.getAbsoluteFile();
+			if ( p ) p = p.getParent();
+			if ( p )
+				return Boolean(p.canWrite());
+			return false;
 		}
 	},
 	isExecutable: {
 		get: function() {
 			return Boolean(this._file.canExecute());
 		}
+	},
 	isFile: {
 		get: function() {
 			return Boolean(this._file.isFile());
