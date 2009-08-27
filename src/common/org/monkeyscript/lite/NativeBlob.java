@@ -173,7 +173,7 @@ final class NativeBlob extends IdScriptableObject {
 						for (int i = 0; i < b.length; i++) {
 							if (i > 0)
 								sb.insert(sb.length()-3, ", ");
-							sb.insert(sb.length()-3, Integer.toString(byteToInt(b[i])));
+							sb.insert(sb.length()-3, Integer.toString(MonkeyScriptRuntime.byteToHighInt(b[i])));
 						}
 						return sb.toString();
 					}
@@ -188,14 +188,14 @@ final class NativeBlob extends IdScriptableObject {
 						}
 						byte b = target[(int)pos];
 						if (id == Id_byteAt) return quickNewNativeBlob(cx, scope, b);
-						else return ScriptRuntime.wrapInt(byteToInt(b));
+						else return ScriptRuntime.wrapInt(MonkeyScriptRuntime.byteToHighInt(b));
 					}
     
 					case Id_indexOf:
 					case Id_lastIndexOf:
 						if ( args.length == 0 )
 							break;
-						byte[] needle = nativeConvert(args[0]);
+						byte[] needle = MonkeyScriptRuntime.toByteArray(args[0]);
 						int offset = 0;
 						if ( args.length > 1 )
 							offset = ScriptRuntime.toInt32( args[1] );
@@ -239,59 +239,6 @@ final class NativeBlob extends IdScriptableObject {
 		return (NativeBlob)thisObj;
 	}
 	
-	protected static byte[] nativeConvert(Object o) {
-		//if ( o.getClass() == byte.class )
-		//	return new byte[] { (byte)o };
-		if ( o.getClass() == byte[].class )
-			return (byte[])o;
-		if ( o instanceof NativeBlob )
-			return ((NativeBlob)o).bytes;
-		//if(o instanceof NativeNumber) {
-		if ( o instanceof Number ) {//oScriptRuntime.typeof(o).equals("number") ) {
-			int ii = ScriptRuntime.toInt32( o );
-			byte[] b = new byte[1];
-			b[0] = intToByte(ii);
-			return b;
-		}
-		//if(o instanceof NativeArray) {
-		if ( ScriptRuntime.isArrayObject(o) ) {
-			Object[] a = ScriptRuntime.getArrayElements((Scriptable)o);
-			//NativeArray a = (NativeArray) o;
-			byte[] ba = new byte[a.length];
-			for (int i = 0; i < a.length; i++) {
-				//Object bo = ScriptRuntime.getObjectIndex(o, i, cx);//NativeArray.getElm(cx, (Scriptable)a, (long)i);
-				Object bo = a[i];
-				if ( !ScriptRuntime.typeof(bo).equals("number") )
-					throw ScriptRuntime.typeError("Contents of data array used as argument to blob method was not entirely numbers");
-				int ii = ScriptRuntime.toInt32( bo );
-				byte b = intToByte(ii);
-				ba[i] = b;
-			}
-			return ba;
-
-		}
-		// ToDo: Output what kind of data is causing trouble
-		throw ScriptRuntime.typeError("Invalid data type used as argument to a blob method");
-	}
-	
-	// tlrobinson notes  (b >= 0) ? b : -1 * ((b ^ 0xFF) + 1)
-	protected static int byteToInt(byte b) {
-		Byte bb = new Byte(b);
-		int bi = bb.intValue();
-		Byte byteMin = new Byte(Byte.MIN_VALUE);
-		int bmin = byteMin.intValue();
-		return bi-bmin;
-	}
-	
-	protected static byte intToByte(int i) {
-		int bmax = Byte.MAX_VALUE-Byte.MIN_VALUE;//(new Byte(Byte.MAX_VALUE-Byte.MIN_VALUE)).intValue();
-		int bmin = (new Byte(Byte.MIN_VALUE)).intValue();
-		if ( i > bmax )
-			throw ScriptRuntime.typeError("Integer representation of byte to high.");
-		byte b = (byte)(i+bmin);
-		return b;
-	}
-	
 	@Override
 	public String toString() {
 		return "[Blob length=" + bytes.length + "]";
@@ -315,13 +262,13 @@ final class NativeBlob extends IdScriptableObject {
 		super.put(index, start, value);
 	}
 	
-    private static Object jsConstructor(Context cx, Scriptable scope, Object[] args) {
-		if (args.length == 0)
-			//return quickNewNativeBlob(cx, scope, new byte[0]);
+	private static Object jsConstructor(Context cx, Scriptable scope, Object[] args) {
+		if ( args.length > 0 ) {
+			return new NativeBlob(MonkeyScriptRuntime.toByteArray(args[0]));
+		} else {
 			return NativeBlob.newEmpty();
-		
-		return new NativeBlob(nativeConvert(args[0]));
-    }
+		}
+	}
 	
 	private static int js_indexOf(byte[] target, byte[] search, int begin2) {
 		double begin = (double) begin2;
@@ -392,7 +339,7 @@ final class NativeBlob extends IdScriptableObject {
 				limit = 1 + target.length;
 		}
 
-        byte[] separator = nativeConvert(args[0]);
+        byte[] separator = MonkeyScriptRuntime.toByteArray(args[0]);
         int[] matchlen = new int[1];
         matchlen[0] = separator.length;
 		
@@ -435,7 +382,7 @@ final class NativeBlob extends IdScriptableObject {
 		int N = args.length;
 		if (N == 0) { return target; }
 		else if (N == 1) {
-			byte[] arg = nativeConvert(args[0]);
+			byte[] arg = MonkeyScriptRuntime.toByteArray(args[0]);
 			byte[] newblob = Arrays.copyOf(target, target.length+arg.length);
 			
 			for (int i = 0; i != arg.length; ++i)
@@ -448,7 +395,7 @@ final class NativeBlob extends IdScriptableObject {
 		int size = target.length;
 		byte[][] argsAsBytes = new byte[N][];
 		for (int i = 0; i != N; ++i) {
-			byte[] b = nativeConvert(args[i]);
+			byte[] b = MonkeyScriptRuntime.toByteArray(args[i]);
 			argsAsBytes[i] = b;
 			size += b.length;
 		}

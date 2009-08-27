@@ -106,7 +106,7 @@ final class NativeStringBuffer extends AbstractBuffer {
 		return new String(chars, 0, (int)length).intern();
 	}
 	
-	/* Make array-style property lookup work for strings. */
+	/* Make array-style property lookup work for buffers. */
 	@Override
 	public Object get(int index, Scriptable start) {
 		if (0 <= index && index < length) {

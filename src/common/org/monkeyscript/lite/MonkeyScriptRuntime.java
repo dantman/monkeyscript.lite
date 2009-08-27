@@ -27,6 +27,10 @@ public class MonkeyScriptRuntime {
 		return ScriptRuntime.newObject(Context.getCurrentContext(), scope, "Blob", new Object[] { b });
 	}
 	
+	public static int byteToHighInt(byte b) {
+		return (b >= 0) ? b : -1 * ((b ^ 0xFF) + 1);
+	}
+	
 	public static byte toByte(Object b) {
 		byte[] bytes = toByteArray(b);
 		if ( bytes.length > 0 )
@@ -35,7 +39,10 @@ public class MonkeyScriptRuntime {
 	}
 	
 	public static byte toByte(Number b) {
-		int n = b.intValue();
+		return toByte(b.intValue());
+	}
+	
+	public static byte toByte(int n) {
 		if ( n < 0 || n > 255 )
 			throw ScriptRuntime.typeError("Invalid data to convert to byte");
 		return (byte)n;

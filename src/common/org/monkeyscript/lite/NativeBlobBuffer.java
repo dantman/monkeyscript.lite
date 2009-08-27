@@ -85,7 +85,7 @@ final class NativeBlobBuffer extends AbstractBuffer {
 						for (int i = 0; i < b.length; i++) {
 							if (i > 0)
 								sb.insert(sb.length()-3, ", ");
-							sb.insert(sb.length()-3, Integer.toString(NativeBlob.byteToInt(b[i])));
+							sb.insert(sb.length()-3, Integer.toString(MonkeyScriptRuntime.byteToHighInt(b[i])));
 						}
 						return sb.toString();
 					}
@@ -104,7 +104,7 @@ final class NativeBlobBuffer extends AbstractBuffer {
 		}
 	}
 	
-	/* Make array-style property lookup work for strings. */
+	/* Make array-style property lookup work for buffers. */
 	@Override
 	public Object get(int index, Scriptable start) {
 		if (0 <= index && index < length) {
