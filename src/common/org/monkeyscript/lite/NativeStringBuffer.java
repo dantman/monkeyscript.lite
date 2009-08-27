@@ -23,7 +23,7 @@ final class NativeStringBuffer extends AbstractBuffer {
 	
 	private NativeStringBuffer(int len) {
 		this.length = len;
-		this.chars = new char[0];
+		this.chars = new char[len];
 	}
 	
 	private NativeStringBuffer(String str) {

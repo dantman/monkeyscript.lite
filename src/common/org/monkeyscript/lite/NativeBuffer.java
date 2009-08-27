@@ -67,18 +67,28 @@ final class NativeBuffer extends IdScriptableObject {
 						if (inNewExpr && args.length == 0)
 							jsConstructor(cx, scope, args);
 						if (args.length > 0) {
-							if ( args[0] instanceof ScriptableObject ) {
+							if ( args[0] instanceof String ) {
+								return ScriptRuntime.newObject(cx, scope, "StringBuffer", args);
+							} else if ( args[0] instanceof ScriptableObject ) {
 								ScriptableObject o = (ScriptableObject)args[0];
 								String c = o.getClassName();
 								if ( c.equals("String") || c.equals("Blob") ) {
 									String constructorName = c + "Buffer";
 									return ScriptRuntime.newObject(cx, scope, constructorName, args);
-								} else if ( o.getClass() == ScriptRuntime.StringClass ) {
-									Object[] ctorArgs = new Object[0];
-									if ( args.length > 1 ) {
-										ctorArgs = new Object[] { args[1] };
+								} else if ( o instanceof IdFunctionObject ) {
+									if ( ((IdFunctionObject)o).hasTag("String") ) {
+										Object[] ctorArgs = new Object[0];
+										if ( args.length > 1 ) {
+											ctorArgs = new Object[] { args[1] };
+										}
+										return ScriptRuntime.newObject(cx, scope, "StringBuffer", ctorArgs);
+									} else if ( ((IdFunctionObject)o).hasTag("Blob") ) {
+										Object[] ctorArgs = new Object[0];
+										if ( args.length > 1 ) {
+											ctorArgs = new Object[] { args[1] };
+										}
+										return ScriptRuntime.newObject(cx, scope, "BlobBuffer", ctorArgs);
 									}
-									return ScriptRuntime.newObject(cx, scope, "StringBuffer", ctorArgs);
 								}
 							}
 						}
