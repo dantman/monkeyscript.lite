@@ -9,6 +9,10 @@ abstract class AbstractBuffer extends IdScriptableObject {
 	
 	abstract protected String getTypeTag();
 	
+	protected String getTag() {
+		return (getTypeTag() + "Buffer").intern();
+	}
+	
 	protected static final int
 		Id_length                    =  1,
 		Id_contentConstructor        =  2,
@@ -39,12 +43,12 @@ abstract class AbstractBuffer extends IdScriptableObject {
 	
 	@Override
 	public String getClassName() {
-		return getTypeTag() + "Buffer";
+		return getTag();
 	}
 	
 	@Override
 	public String toString() {
-		return "[" + getTypeTag() + "Buffer length=" + length + "]";
+		return ("[" + getClassName() + " length=" + length + "]").intern();
 	}
 	
 	@Override
@@ -72,7 +76,27 @@ abstract class AbstractBuffer extends IdScriptableObject {
 		super.fillConstructorProperties(ctor);
 	}
 	
+	@Override
+	protected void initPrototypeId(int id) {
+		String s;
+		int arity;
+		switch (id) {
+			case Id_constructor:       arity=1; s="constructor";       break;
+			case Id_toString:          arity=0; s="toString";          break;
+			case Id_toSource:          arity=0; s="toSource";          break;
+			case Id_valueOf:           arity=0; s="valueOf";           break;
+			case Id_equals:            arity=1; s="equals";            break;
+			case Id_slice:             arity=2; s="slice";             break;
+			case Id_append:            arity=1; s="append";            break;
+			default: throw new IllegalArgumentException(String.valueOf(id));
+		}
+		initPrototypeMethod(getTag(), id, s, arity);
+	}
+	
     public Object execIdCall(IdFunctionObject f, Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
+		if (!f.hasTag(getTag())) {
+			return super.execIdCall(f, cx, scope, thisObj, args);
+		}
 		int id = f.methodId();
 		again:
 			for(;;) {
@@ -81,7 +105,18 @@ abstract class AbstractBuffer extends IdScriptableObject {
 						return thisObj.toString();
 					
 					case Id_equals:
-						return js_equals(cx, scope, thisObj, args);
+						if ( !safeThis(thisObj) )
+							return Boolean.FALSE;
+						return js_equals(cx, scope, (AbstractBuffer)thisObj, args);
+					
+					case Id_slice:
+						return null;
+						
+					case Id_append:
+						if ( !safeThis(thisObj) )
+							throw ScriptRuntime.typeError("Cannot do append on invalid buffer type");
+						js_append(cx, scope, (AbstractBuffer)thisObj, args);
+						return null;
 				}
 				throw new IllegalArgumentException(String.valueOf(id));
 			}
@@ -90,12 +125,28 @@ abstract class AbstractBuffer extends IdScriptableObject {
 	abstract protected Object jsConstructor(Context cx, Scriptable scope, Object[] args);
 	
 	protected static Object js_equals(Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
-		if ( thisObj instanceof AbstractBuffer )
-			return ScriptRuntime.wrapBoolean(((AbstractBuffer)thisObj).rawEquals(args[0]));
-		return false;
+		return ScriptRuntime.wrapBoolean(((AbstractBuffer)thisObj).rawEquals(args[0]));
 	}
 	
+	protected void js_append(Context cx, Scriptable scope, AbstractBuffer thisObj, Object[] args) {
+		if ( args.length == 0 )
+			return;
+		Object data = toWildArray(args[0]);
+		
+		thisObj.rawSlice((int)thisObj.length, 0, data);
+	}
+	
+	/**
+	 * Test that must return true ONLY if the object passed to it is the same
+	 * type of buffer, including data type.
+	 */
+	abstract protected boolean safeThis(Scriptable thisObj);
+	
+	abstract protected Object toWildArray(Object arg);
+	abstract protected int getWildArrayLength(Object data);
+	
 	abstract protected boolean rawEquals(Object obj);
+	abstract protected Object rawSlice(int offset, int length, Object data);
 	
 	protected void setLength(Object len) { setLength(ScriptRuntime.toInt32(len)); }
 	protected void setLength(long len) { setLength((int)len); }
@@ -111,10 +162,14 @@ abstract class AbstractBuffer extends IdScriptableObject {
 	@Override
 	protected int findPrototypeId(String s) {
 		int id;
-// #generated# Last update: 2009-08-25 18:31:58 PDT
+// #generated# Last update: 2009-08-26 20:26:20 PDT
         L0: { id = 0; String X = null; int c;
             L: switch (s.length()) {
-            case 6: X="equals";id=Id_equals; break L;
+            case 5: X="slice";id=Id_slice; break L;
+            case 6: c=s.charAt(0);
+                if (c=='a') { X="append";id=Id_append; }
+                else if (c=='e') { X="equals";id=Id_equals; }
+                break L;
             case 7: X="valueOf";id=Id_valueOf; break L;
             case 8: c=s.charAt(3);
                 if (c=='o') { X="toSource";id=Id_toSource; }
@@ -135,7 +190,9 @@ abstract class AbstractBuffer extends IdScriptableObject {
 		Id_toSource                  = 3,
 		Id_valueOf                   = 4,
 		Id_equals                    = 5,
-		MAX_PROTOTYPE_ID             = 5;
+		Id_slice                     = 6,
+		Id_append                    = 7,
+		MAX_PROTOTYPE_ID             = 7;
 	
 // #/string_id_map#
 	

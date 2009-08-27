@@ -9,8 +9,6 @@ final class NativeStringBuffer extends AbstractBuffer {
 	
 	static final long serialVersionUID = 1251247849L;
 	
-	private static final Object STRING_BUFFER_TAG = "StringBuffer";
-	
 	protected String getTypeTag() { return "String"; }
 	
 	static void init(Scriptable proto, Scriptable scope, boolean sealed) {
@@ -42,21 +40,6 @@ final class NativeStringBuffer extends AbstractBuffer {
 		return ScriptRuntime.newObject(cx, scope, "StringBuffer", new Object[] { target });
 	}
 	
-	@Override
-	protected void initPrototypeId(int id) {
-		String s;
-		int arity;
-		switch (id) {
-			case Id_constructor:       arity=1; s="constructor";       break;
-			case Id_toString:          arity=0; s="toString";          break;
-			case Id_toSource:          arity=0; s="toSource";          break;
-//			case Id_slice:             arity=2; s="slice";             break;
-//			case Id_equals:            arity=1; s="equals";            break;
-			default: throw new IllegalArgumentException(String.valueOf(id));
-		}
-		initPrototypeMethod(STRING_BUFFER_TAG, id, s, arity);
-	}
-	
 	private static NativeStringBuffer realThis(Object thisObj, IdFunctionObject f) {
 		if (!(thisObj instanceof NativeStringBuffer))
 			throw incompatibleCallError(f);
@@ -64,7 +47,7 @@ final class NativeStringBuffer extends AbstractBuffer {
 	}
 	
     public Object execIdCall(IdFunctionObject f, Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
-		if (!f.hasTag(STRING_BUFFER_TAG)) {
+		if (!f.hasTag(getTag())) {
 			return super.execIdCall(f, cx, scope, thisObj, args);
 		}
 		int id = f.methodId();
@@ -95,7 +78,7 @@ final class NativeStringBuffer extends AbstractBuffer {
 		if ( args.length > 0 ) {
 			if ( args[0] instanceof Number )
 				return new NativeStringBuffer(ScriptRuntime.toInt32(args[0]));
-			return new NativeStringBuffer(MonkeyScriptRuntime.toRealString(args[0]));
+			return new NativeStringBuffer(MonkeyScriptRuntime.toCharArray(args[0]));
 		} else {
 			return NativeStringBuffer.newEmpty();
 		}
@@ -103,7 +86,7 @@ final class NativeStringBuffer extends AbstractBuffer {
 	
 	@Override
 	public String toString() {
-		return new String(chars, 0, (int)length).intern();
+		return (new String(chars, 0, (int)length)).intern();
 	}
 	
 	/* Make array-style property lookup work for buffers. */
@@ -115,13 +98,15 @@ final class NativeStringBuffer extends AbstractBuffer {
 		return super.get(index, start);
 	}
 	
-	@Override
-	public void put(int index, Scriptable start, Object value) {
-		if (0 <= index && index < length) {
-			// @todo
-			return;
-		}
-		super.put(index, start, value);
+	protected boolean safeThis(Scriptable thisObj) {
+		return thisObj instanceof NativeStringBuffer;
+	}
+	
+	protected Object toWildArray(Object arg) {
+		return MonkeyScriptRuntime.toCharArray(arg);
+	}
+	protected int getWildArrayLength(Object data) {
+		return ((char[])data).length;
 	}
 	
 	protected boolean rawEquals(Object obj) {
@@ -136,6 +121,24 @@ final class NativeStringBuffer extends AbstractBuffer {
 		if ( test != null )
 			return Arrays.equals(chars, test);
 		return false;
+	}
+	
+	protected Object rawSlice(int offset, int chop, Object data) {
+		if ( offset > length )
+			throw ScriptRuntime.constructError("RangeError", "Slice offset to high");
+		if ( offset < 0 )
+			throw ScriptRuntime.constructError("RangeError", "Slice offset to low");
+		char[] c = (char[])data;
+		
+		if ( offset == length && chop == 0 ) {
+			// Short-circut optimized form of append
+			truncateRaw(length+c.length);
+			System.arraycopy(c, 0, chars, (int)length, c.length);
+			length += c.length;
+			return new char[0];
+		}
+		
+		throw ScriptRuntime.constructError("Error", "not yet implemented");
 	}
 	
 	protected void truncateRaw(int len) {

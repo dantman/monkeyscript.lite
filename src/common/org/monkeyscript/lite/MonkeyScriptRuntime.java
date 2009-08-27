@@ -80,19 +80,42 @@ public class MonkeyScriptRuntime {
 		return new byte[] { b };
 	}
 	
+	public static char[] toCharArray(Object c) {
+		if ( c.getClass() == char[].class )
+			return (char[])c;
+		if ( c instanceof Character )
+			return new char[] { ((Character)c).charValue() };
+		if ( c instanceof String )
+			return ((String)c).toCharArray();
+		if ( c instanceof NativeStringBuffer )
+			return ((NativeStringBuffer)c).toCharArray();
+		
+		throw ScriptRuntime.typeError("Invalid data to convert to char");
+	}
+	
+	public static char[] toCharArray(char c) {
+		return new char[] { c };
+	}
+	
 	/**
 	 * Converts an object into a string if possible without using any magic
 	 * toString methods on objects.
 	 */
 	public static String toRealString(Object o) {
 		if ( o.getClass() == char[].class )
-			return new String((char[])o).intern();
+			return (new String((char[])o)).intern();
+		if ( o instanceof Character )
+			return ((Character)o).toString();
 		if ( o instanceof String )
 			return ((String)o).intern();
 		if ( o instanceof NativeStringBuffer )
 			return ((NativeStringBuffer)o).toString();
 		
 		throw ScriptRuntime.typeError("Invalid data to convert to string");
+	}
+	
+	public static String toRealString(char c) {
+		return Character.toString(c);
 	}
 	
 }

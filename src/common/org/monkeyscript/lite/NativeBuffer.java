@@ -114,10 +114,11 @@ final class NativeBuffer extends IdScriptableObject {
 	@Override
 	protected int findPrototypeId(String s) {
 		int id;
-// #generated# Last update: 2009-08-25 21:01:14 PDT
+// #generated# Last update: 2009-08-26 20:26:20 PDT
         L0: { id = 0; String X = null; int c;
             int s_length = s.length();
-            if (s_length==8) {
+            if (s_length==7) { X="valueOf";id=Id_valueOf; }
+            else if (s_length==8) {
                 c=s.charAt(3);
                 if (c=='o') { X="toSource";id=Id_toSource; }
                 else if (c=='t') { X="toString";id=Id_toString; }

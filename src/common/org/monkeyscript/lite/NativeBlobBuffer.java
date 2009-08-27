@@ -9,8 +9,6 @@ final class NativeBlobBuffer extends AbstractBuffer {
 	
 	static final long serialVersionUID = 1251247849L;
 	
-	private static final Object BLOB_BUFFER_TAG = "BlobBuffer";
-	
 	protected String getTypeTag() { return "Blob"; }
 	
 	static void init(Scriptable proto, Scriptable scope, boolean sealed) {
@@ -37,22 +35,6 @@ final class NativeBlobBuffer extends AbstractBuffer {
 		return ScriptRuntime.newObject(cx, scope, "BlobBuffer", new Object[] { target });
 	}
 	
-	@Override
-	protected void initPrototypeId(int id) {
-		String s;
-		int arity;
-		switch (id) {
-			case Id_constructor:       arity=1; s="constructor";       break;
-			case Id_toString:          arity=0; s="toString";          break;
-			case Id_toSource:          arity=0; s="toSource";          break;
-			case Id_valueOf:           arity=0; s="valueOf";           break;
-//			case Id_slice:             arity=2; s="slice";             break;
-//			case Id_equals:            arity=1; s="equals";            break;
-			default: throw new IllegalArgumentException(String.valueOf(id));
-		}
-		initPrototypeMethod(BLOB_BUFFER_TAG, id, s, arity);
-	}
-	
 	private static NativeBlobBuffer realThis(Object thisObj, IdFunctionObject f) {
 		if (!(thisObj instanceof NativeBlobBuffer))
 			throw incompatibleCallError(f);
@@ -60,7 +42,7 @@ final class NativeBlobBuffer extends AbstractBuffer {
 	}
 	
     public Object execIdCall(IdFunctionObject f, Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
-		if (!f.hasTag(BLOB_BUFFER_TAG)) {
+		if (!f.hasTag(getTag())) {
 			return super.execIdCall(f, cx, scope, thisObj, args);
 		}
 		int id = f.methodId();
@@ -113,15 +95,15 @@ final class NativeBlobBuffer extends AbstractBuffer {
 		return super.get(index, start);
 	}
 	
-	@Override
-	public void put(int index, Scriptable start, Object value) {
-		if (0 <= index && index < length) {
-			
-			
-			// @todo
-			return;
-		}
-		super.put(index, start, value);
+	protected boolean safeThis(Scriptable thisObj) {
+		return thisObj instanceof NativeBlobBuffer;
+	}
+	
+	protected Object toWildArray(Object arg) {
+		return MonkeyScriptRuntime.toByteArray(arg);
+	}
+	protected int getWildArrayLength(Object data) {
+		return ((byte[])data).length;
 	}
 	
 	protected boolean rawEquals(Object obj) {
@@ -136,6 +118,10 @@ final class NativeBlobBuffer extends AbstractBuffer {
 		if ( test != null )
 			return Arrays.equals(bytes, test);
 		return false;
+	}
+	
+	protected Object rawSlice(int offset, int chop, Object data) {
+		throw ScriptRuntime.constructError("Error", "not yet implemented");
 	}
 	
 	protected void truncateRaw(int len) {
