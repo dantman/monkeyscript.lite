@@ -123,31 +123,12 @@ final class NativeStringBuffer extends AbstractBuffer {
 		return false;
 	}
 	
-	protected Object rawSlice(int offset, int chop, Object data) {
-		if ( offset > length )
-			throw ScriptRuntime.constructError("RangeError", "Slice offset to high");
-		if ( offset < 0 )
-			throw ScriptRuntime.constructError("RangeError", "Slice offset to low");
-		char[] c = (char[])data;
-		
-		if ( offset == length && chop == 0 ) {
-			// Short-circut optimized form of append
-			truncateRaw(length+c.length);
-			System.arraycopy(c, 0, chars, (int)length, c.length);
-			length += c.length;
-			return new char[0];
-		}
-		
-		throw ScriptRuntime.constructError("Error", "not yet implemented");
-	}
-	
-	protected void truncateRaw(int len) {
-		chars = Arrays.copyOf(chars, len);
-	}
-	
 	public char[] toCharArray() {
 		return Arrays.copyOf(chars, (int)length);
 	}
+	
+	protected Object getArray() { return chars; }
+	protected void setArray(Object arr) { chars = (char[])arr; }
 	
 	private char[] chars;
 }

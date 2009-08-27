@@ -120,17 +120,12 @@ final class NativeBlobBuffer extends AbstractBuffer {
 		return false;
 	}
 	
-	protected Object rawSlice(int offset, int chop, Object data) {
-		throw ScriptRuntime.constructError("Error", "not yet implemented");
-	}
-	
-	protected void truncateRaw(int len) {
-		bytes = java.util.Arrays.copyOf(bytes, len);
-	}
-	
 	public byte[] toByteArray() {
 		return Arrays.copyOf(bytes, (int)length);
 	}
+	
+	protected Object getArray() { return bytes; }
+	protected void setArray(Object arr) { bytes = (byte[])arr; }
 	
 	private byte[] bytes;
 }

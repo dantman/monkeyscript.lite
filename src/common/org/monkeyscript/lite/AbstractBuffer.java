@@ -142,11 +142,39 @@ abstract class AbstractBuffer extends IdScriptableObject {
 	 */
 	abstract protected boolean safeThis(Scriptable thisObj);
 	
+	/**
+	 * Returns the char[] or byte[] array for the buffer as an Object so it
+	 * can be worked on abstractly
+	 */
+	abstract protected Object getArray();
+	
+	/**
+	 * Sets the char[] or byte[] array for the buffer abstractly
+	 */
+	abstract protected void setArray(Object arr);
+	
 	abstract protected Object toWildArray(Object arg);
 	abstract protected int getWildArrayLength(Object data);
 	
 	abstract protected boolean rawEquals(Object obj);
-	abstract protected Object rawSlice(int offset, int length, Object data);
+	
+	protected Object rawSlice(int offset, int chop, Object data) {
+		if ( offset > length )
+			throw ScriptRuntime.constructError("RangeError", "Slice offset to high");
+		if ( offset < 0 )
+			throw ScriptRuntime.constructError("RangeError", "Slice offset to low");
+		
+		if ( offset == length && chop == 0 ) {
+			// Short-circut optimized form of append
+			int len = ArrayUtils.length(data);
+			truncateRaw(length+len);
+			ArrayUtils.transfer(data, 0, getArray(), (int)length, len);
+			length += len;
+			return ArrayUtils.newEmpty(getArray());
+		}
+		
+		throw ScriptRuntime.constructError("Error", "not yet implemented");
+	}
 	
 	protected void setLength(Object len) { setLength(ScriptRuntime.toInt32(len)); }
 	protected void setLength(long len) { setLength((int)len); }
@@ -155,7 +183,9 @@ abstract class AbstractBuffer extends IdScriptableObject {
 	}
 	
 	protected void truncateRaw(long len) { truncateRaw((int)len); }
-	abstract protected void truncateRaw(int len);
+	protected void truncateRaw(int len) {
+		setArray(ArrayUtils.copyOf(getArray(), len));
+	}
 	
 // #string_id_map#
 	
