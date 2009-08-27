@@ -7,6 +7,8 @@ DIST_DIR = ${PREFIX}/dist
 CLASSPATH = ${DIST_DIR}/build:${DIST_DIR}/js.jar
 JAR = ${DIST_DIR}/monkeyscript.jar
 
+IDSWITCH = java -cp lib/rhino/build/classes/ org.mozilla.javascript.tools.idswitch.Main
+
 all: lite
 
 ${DIST_DIR}:
@@ -56,4 +58,14 @@ rhino:
 	@@if [ ! -e lib/rhino/build.xml ]; then echo "Rhino repo does not appear to be checked out.\nYou probably did not initialize the submodule.\nPlease run \`git submodule init\` followed by \`git submodule update\`"; exit 1; fi;
 	@@echo "Updating lib/js.jar"
 	cd lib/rhino/; ant jar -Ddist.dir=..
+
+idswitch:
+	@@if [ ! -e lib/rhino/build/classes/org/mozilla/javascript/tools/idswitch/Main.class ]; then echo "To use idswitch the rhino submodule must be checked out and built"; exit 1; fi
+	@@echo "Running idswitch"
+	${IDSWITCH} ${SRC_DIR}/common/org/monkeyscript/lite/NativeBlob.java
+	${IDSWITCH} ${SRC_DIR}/common/org/monkeyscript/lite/AbstractBuffer.java
+	${IDSWITCH} ${SRC_DIR}/common/org/monkeyscript/lite/NativeBuffer.java
+	${IDSWITCH} ${SRC_DIR}/common/org/monkeyscript/lite/NativeStringBuffer.java
+	${IDSWITCH} ${SRC_DIR}/common/org/monkeyscript/lite/NativeBlobBuffer.java
+	@@echo "Done"
 
