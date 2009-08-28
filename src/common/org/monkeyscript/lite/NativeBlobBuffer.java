@@ -59,7 +59,7 @@ final class NativeBlobBuffer extends AbstractBuffer {
 					}
 					
 					case Id_valueOf:
-						return realThis(thisObj, f);
+						return realThis(thisObj, f).toBlob(scope);
 					
 					case Id_toSource: {
 						byte[] b = realThis(thisObj, f).bytes;
@@ -122,6 +122,10 @@ final class NativeBlobBuffer extends AbstractBuffer {
 	
 	public byte[] toByteArray() {
 		return Arrays.copyOf(bytes, (int)length);
+	}
+	
+	public Object toBlob(Scriptable scope) {
+		return MonkeyScriptRuntime.newBlob(bytes, scope);
 	}
 	
 	protected Object getArray() { return bytes; }

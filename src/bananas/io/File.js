@@ -32,14 +32,14 @@ File.prototype.open = function() {
 		if ( !isString(flags) )
 			throw new TypeError("Mode is not a string");
 		
-		if ( flags.has('r') ) options.read = true;
-		if ( flags.has('w') ) options.write = true;
-		if ( flags.has('x') ) { options.create = false; options.write = true; }
-		if ( flags.has('a') ) options.append = true;
-		if ( flags.has('+') ) options.truncate = false;
-		if ( flags.has('s') ) options.sync = true;
-		if ( flags.has('t') ) options.text = true;
-		if ( flags.has('b') ) options.text = false;
+		if ( flags.contains('r') ) options.read = true;
+		if ( flags.contains('w') ) options.write = true;
+		if ( flags.contains('x') ) { options.create = false; options.write = true; }
+		if ( flags.contains('a') ) options.append = true;
+		if ( flags.contains('+') ) options.truncate = false;
+		if ( flags.contains('s') ) options.sync = true;
+		if ( flags.contains('t') ) options.text = true;
+		if ( flags.contains('b') ) options.text = false;
 		
 		if ( isString(args[0]) && /^([-r][-w][-x]){3}$|^([augo]+[-+][rwxa]+)+$/.test(args[0]) )
 			options.encoding = args.shift();
@@ -75,95 +75,22 @@ File.prototype.open = function() {
 	//options.encoding = options.encoding || Kernel.systemEncoding;
 	
 	function doOpen() {
-		// Whoops, we have rhino specific stuff here we need to move out
-		var rb, rt, wb, wt, o = {};
+		var o = _native.getStream.call(this, options);
 		o.contentConstructor = function() {
 			return options.text ? String : Blob;
 		};
-		if ( options.read ) {
-			var rb = new java.io.FileInputStream(this._file);
-			if ( !options.text ) {
-				o.read = function(len, bufNoSkip) {
-					if ( len === Infinity )
-						len = 512;
-					if ( !bufNoSkip )
-						return rb.skip(len);
-					var bbuf = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, len);
-					var rLen = rb.read(bbuf, 0, len);
-					return Blob(java.util.Arrays.copyOf(bbuf, rLen));
-				};
-			} else {
-				var rt = new java.io.BufferedReader(new java.io.InputStreamReader(rb, options.encoding));
-				o.read = function(len, bufNoSkip) {
-					if ( len === Infinity )
-						len = 512;
-					if ( !bufNoSkip )
-						return rb.skip(len);
-					var cbuf = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, 512);
-					var rLen = rb.read(cbuf, 0, len);
-					return String(new java.lang.String(cbuf, 0, rLen));
-				};
-			}
-		}
-		if ( options.write ) {
-			var wb = new java.io.FileOutputStream(this._file, options.append);
-			if ( options.truncate ) {
-				// Truncate when opening
-				wb.getChannel().truncate(0);
-			}
-			function maybeSync() {
-				if ( options.sync ) {
-					o.flush();
-					wb.getFD().sync();
-				}
-			}
-			if ( !options.text ) {
-				o.write = function(data) {
-					data = data.valueOf();
-					if(!(data instanceof Blob))
-						throw new TypeError();
-					var bbuf = data.toJavaByteArray(); // Extension for rhino environment
-					wb.write(bbuf);
-					maybeSync();
-					return data.length;
-				};
-				o.flush = function() {
-					wb.flush();
-				};
-			} else {
-				var wt = new java.io.BufferedWriter(new java.io.OutputStreamWriter(wb, options.encoding));
-				o.write = function(data) {
-					data = data.valueOf();
-					if(!isString(data))
-						throw new TypeError();
-					var cbuf = data.toJavaCharArray(); // Extension for rhino environment
-					wt.write(cbuf);
-					maybeSync();
-					return data.length;
-				};
-				o.flush = function() {
-					wt.flush();
-				};
-			}
-		}
-		o.close = function() {
-			if ( rt ) rt.close();
-			else if ( rb ) rb.close();
-			if ( wt ) wt.close();
-			else if ( wb ) wb.close();
-		};
-		return new Stream(o);
+		return new exports.Stream(o)
 	}
 	
 	if ( block ) {
-		var stream = doOpen();
+		var stream = doOpen.call(this);
 		try {
 			return block.call(this, stream);
 		} finally {
 			stream.close();
 		}
 	} else {
-		return doOpen();
+		return doOpen.call(this);
 	}
 };
 

@@ -64,7 +64,7 @@ final class NativeStringBuffer extends AbstractBuffer {
 					}
 					
 					case Id_valueOf:
-						return realThis(thisObj, f);
+						return realThis(thisObj, f).toString();
 					
 					case Id_toSource: {
 						return "(new StringBuffer(\""+ScriptRuntime.escapeString(realThis(thisObj, f).toString())+"\"))";

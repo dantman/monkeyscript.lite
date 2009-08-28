@@ -3,13 +3,29 @@
 function read(fnRead, len, bufNoSkip) {
 	if ( len === 0 )
 		throw new TypeError("Cannot read nothing from a stream");
-	
 	if ( !len ) {
-		var chunk, buf = new Buffer();
-		buf.encoding = this.encoding;
-		while( chunk = read.call(this, fnRead, Infinity, bufNoSkip) )
-			buf.append(chunk);
-		var data = buf.valueOf();
+		if ( bufNoSkip ) {
+			var chunk, buf = new Buffer(this.contentConstructor);
+			for(;;) {
+				chunk = read.call(this, fnRead, Infinity, buf);
+				// @todo, handle stuf read into buffer instead of returned
+				if ( !chunk || !chunk.length )
+					break;
+				buf.append(chunk);
+			}
+			var data = buf.valueOf();
+		} else {
+			// Skip, buffering creates unwelcome behavior when skipping
+			var chunk, len = 0;
+			for(;;) {
+				chunk = read.call(this, fnRead, Infinity, false);
+				if ( !chunk || !chunk.length )
+					break;
+				len += isNumber(chunk) ? chunk : chunk.length;
+			}
+			var data = { length: len };
+		}
+		// Do we need to return and short circut position addition?
 	} else {
 		var data = fnRead.call(this, len, bufNoSkip);
 	}
@@ -18,11 +34,11 @@ function read(fnRead, len, bufNoSkip) {
 }
 
 function wrapRead(fnRead) {
-	return function(len, bufNoSkip) {
+	return function(len) {
 		try {
-			return read.call(this, fnRead, len, bufNoSkip);
+			return read.call(this, fnRead, len, true);
 		} catch ( e if e === Stream.EOF ) {
-			return this.text ? "" : new Blob();
+			return this.contentConstructor();
 		}
 	};
 }
@@ -30,7 +46,12 @@ function wrapRead(fnRead) {
 function wrapSkip(fnRead) {
 	return function(len) {
 		try {
-			return read.call(this, fnRead, len, false);
+			var n = read.call(this, fnRead, len, false);
+			if ( !isNumber(n) )
+				// If there is no special handling of .skip data is likely
+				// returned instead of a length, pull length from that
+				n = n.length;
+			return n;
 		} catch ( e if e === Stream.EOF ) {
 			return this.contentConstructor();
 		}
@@ -42,9 +63,9 @@ function Stream(obj) {
 		return new Stream(obj);
 	
 	if ( isFunction(obj.contentConstructor) )
-		this.__defineGetter('contentConstructor', obj.contentConstructor);
+		this.__defineGetter__('contentConstructor', obj.contentConstructor);
 	else if ( obj.contentConstructor === String || obj.contentConstructor === Blob )
-		this.__defineGetter('contentConstructor', function() { return obj.contentConstructor });
+		this.__defineGetter__('contentConstructor', function() { return obj.contentConstructor });
 	else
 		throw new TypeError("Object did not contain contentConstructor function");
 	if ( isFunction(obj.read) ) {
