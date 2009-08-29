@@ -1,7 +1,7 @@
 // -*- coding: UTF-8 -*-
 
 function BufferStream(buf) {
-	return new Stream({
+	return new exports.Stream({
 		contentConstructor: buf.contentConstructor,
 		read: function(len, bufNoSkip) {
 			if ( this.position >= buf.length )
