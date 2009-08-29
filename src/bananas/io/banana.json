@@ -6,7 +6,8 @@
 	"components": [
 		"File.js",
 		"FilePath.js",
-		"Stream.js"
+		"Stream.js",
+		"BufferStream.js"
 	],
 	"depends": ["misc.path"]
 }

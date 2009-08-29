@@ -1,0 +1,20 @@
+// -*- coding: UTF-8 -*-
+
+function BufferStream(buf) {
+	return new Stream({
+		contentConstructor: buf.contentConstructor,
+		read: function(len, bufNoSkip) {
+			if ( this.position >= buf.length )
+				throw Stream.EOF;
+			if ( !bufNoSkip )
+				return { length: len };
+			return buf.slice(this.position, len);
+		},
+		write: function(data) {
+			// @todo
+		}
+	});
+}
+
+exports.BufferStream = BufferStream;
+
