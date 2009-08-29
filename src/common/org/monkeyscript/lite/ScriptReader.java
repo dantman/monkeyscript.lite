@@ -53,7 +53,7 @@ public class ScriptReader extends Reader {
 	
 	private void init() throws IOException, UnsupportedEncodingException {
 		if ( prefix != null ) {
-			firstLine += (new String(prefix)).split("\n").length-1;
+			firstLine += (new String(prefix)).split("\n").length-2;
 		}
 		
 		BufferedInputStream is = this.buf;
