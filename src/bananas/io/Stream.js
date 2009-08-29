@@ -58,6 +58,10 @@ function wrapSkip(fnRead) {
 	};
 }
 
+function wrapWrite(fnWrite) {
+	// @todo
+}
+
 function Stream(obj) {
 	if (!(this instanceof Stream))
 		return new Stream(obj);
