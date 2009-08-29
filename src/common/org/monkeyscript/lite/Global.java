@@ -7,6 +7,9 @@ import java.io.PrintStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.DelayQueue;
+
+import java.lang.InterruptedException;
 
 import org.mozilla.javascript.*;
 
@@ -24,6 +27,8 @@ public class Global extends ImporterTopLevel {
 	}
 	
 	public void init(Context cx) {
+		cx.putThreadLocal("xMonkeyScriptAsyncQueue", new DelayQueue<DelayedFunction>());
+		
 		boolean sealed = cx.isSealed();
 		initStandardObjects( cx, sealed );
 		defineProperty("global", this, ScriptableObject.DONTENUM | ScriptableObject.READONLY);
@@ -37,6 +42,8 @@ public class Global extends ImporterTopLevel {
 			"includeOnce",
 			"includeIfExists",
 			"print",
+			"setTimeout",
+			"clearTimeout",
 		};
 		defineFunctionProperties(functions, Global.class, ScriptableObject.DONTENUM);
 		try {
@@ -166,6 +173,36 @@ public class Global extends ImporterTopLevel {
 		//String fileName = Context.getSourcePositionFromStackPublic(linep);
 		//return linep[0];
 		return ScriptRuntime.constructError("Error", "").lineNumber();
+	}
+	
+	/** ASYNC **/
+	public static Object setTimeout( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
+		if ( args.length < 2 || !(args[0] instanceof Function) || !(args[1] instanceof Number) )
+			throw ScriptRuntime.typeError("Invalid arguments to setTimeout");
+		Function fn = (Function)args[0];
+		long ms = ((Number)args[1]).longValue();
+		DelayedFunction dfn = new DelayedFunction(fn, ms);
+		DelayQueue<DelayedFunction> asyncQueue = (DelayQueue<DelayedFunction>)cx.getThreadLocal("xMonkeyScriptAsyncQueue");
+		asyncQueue.add(dfn);
+		return dfn;
+	}
+	
+	public static Object clearTimeout( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
+		if ( args.length < 1 || !(args[0] instanceof DelayedFunction) )
+			throw ScriptRuntime.typeError("Invalid arguments to clearTimeout");
+		DelayQueue<DelayedFunction> asyncQueue = (DelayQueue<DelayedFunction>)cx.getThreadLocal("xMonkeyScriptAsyncQueue");
+		DelayedFunction dfn = (DelayedFunction)args[0];
+		return ScriptRuntime.wrapBoolean(asyncQueue.remove(dfn));
+	}
+	
+	public static void runQueue( Context cx, Scriptable global ) {
+		DelayQueue<DelayedFunction> que = (DelayQueue<DelayedFunction>)cx.getThreadLocal("xMonkeyScriptAsyncQueue");
+		while( que.size() > 0 ) {
+			try {
+				DelayedFunction dfn = que.take();
+				dfn.call( cx, global, global, new Object[0] );
+			} catch ( InterruptedException e ) {}
+		}
 	}
 	
 }

@@ -222,3 +222,15 @@ delete global.includeIfExists;
 }
 delete _arguments;
 
+function async(fn) {
+	setTimeout(fn, 0);
+}
+async.pending = function(fn) {
+	function queued() {
+		var ret = fn();
+		if ( ret === false )
+			setTimeout(queued, 10);
+	}
+	async(queued);
+};
+

@@ -37,6 +37,7 @@ public class MonkeyScript {
 			quickRunScript( cx, global, "wrench17.js" );
 			quickRunScript( cx, global, "monkeyscript.java.js" );
 			quickRunScript( cx, global, "monkeyscript.js" );
+			Global.runQueue( cx, global );
 			
 		} finally {
 			Context.exit();
