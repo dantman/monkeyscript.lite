@@ -73,6 +73,7 @@
 			}
 		}
 		o.close = function() {
+			o.flush();
 			if ( rt ) rt.close();
 			else if ( rb ) rb.close();
 			if ( wt ) wt.close();
