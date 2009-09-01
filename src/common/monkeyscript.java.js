@@ -233,4 +233,7 @@ async.pending = function(fn) {
 	}
 	async(queued);
 };
+// For now do this since .seal appears to be broken
+Object.realSeal = Object.seal;
+Object.seal = function nonSeal(o) { return o; }
 

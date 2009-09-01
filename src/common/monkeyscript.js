@@ -18,12 +18,12 @@ var monkeyscript = {
 		monkeyscript.scriptName = args.shift();
 	}
 	
-	//Object.seal(args); // @ES5
+	Object.seal(args);
 	monkeyscript.arguments = args;
 	global.arguments = Array.slice(args);
 	
 	global.Kernel = _native.Kernel;
-	//Object.seal(Kernel); // @ES5
+	Object.seal(Kernel);
 	
 	monkeyscript.rc.push(
 		Kernel.configDir + Kernel.os.fileSeparator + 'monkeyscriptrc.js',
@@ -38,7 +38,7 @@ var monkeyscript = {
 			monkeyscript.rc.push( basePath + Kernel.os.fileSeparator + baseName );
 		});
 	});
-	//Object.seal(monkeyscript.rc); // @ES5
+	Object.seal(monkeyscript.rc);
 	
 })(_native);
 
