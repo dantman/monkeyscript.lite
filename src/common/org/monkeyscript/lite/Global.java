@@ -176,27 +176,33 @@ public class Global extends ImporterTopLevel {
 	}
 	
 	/** ASYNC **/
+	@SuppressWarnings("unchecked")
+	private static DelayQueue<DelayedFunction> getAsyncQueue(Context cx) {
+		Object asyncQueue = cx.getThreadLocal("xMonkeyScriptAsyncQueue");
+		if (!(asyncQueue instanceof DelayQueue))
+			throw new NullPointerException();
+		return (DelayQueue<DelayedFunction>)asyncQueue;
+	}
 	public static Object setTimeout( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
 		if ( args.length < 2 || !(args[0] instanceof Function) || !(args[1] instanceof Number) )
 			throw ScriptRuntime.typeError("Invalid arguments to setTimeout");
 		Function fn = (Function)args[0];
 		long ms = ((Number)args[1]).longValue();
 		DelayedFunction dfn = new DelayedFunction(fn, ms);
-		DelayQueue<DelayedFunction> asyncQueue = (DelayQueue<DelayedFunction>)cx.getThreadLocal("xMonkeyScriptAsyncQueue");
-		asyncQueue.add(dfn);
+		getAsyncQueue(cx).add(dfn);
 		return dfn;
 	}
 	
 	public static Object clearTimeout( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
 		if ( args.length < 1 || !(args[0] instanceof DelayedFunction) )
 			throw ScriptRuntime.typeError("Invalid arguments to clearTimeout");
-		DelayQueue<DelayedFunction> asyncQueue = (DelayQueue<DelayedFunction>)cx.getThreadLocal("xMonkeyScriptAsyncQueue");
+		DelayQueue<DelayedFunction> asyncQueue = getAsyncQueue(cx);
 		DelayedFunction dfn = (DelayedFunction)args[0];
 		return ScriptRuntime.wrapBoolean(asyncQueue.remove(dfn));
 	}
 	
 	public static void runQueue( Context cx, Scriptable global ) {
-		DelayQueue<DelayedFunction> que = (DelayQueue<DelayedFunction>)cx.getThreadLocal("xMonkeyScriptAsyncQueue");
+		DelayQueue<DelayedFunction> que = getAsyncQueue(cx);
 		while( que.size() > 0 ) {
 			try {
 				DelayedFunction dfn = que.take();
