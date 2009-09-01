@@ -11,3 +11,8 @@
 - Rhino 1.7 appears to have a bug in __iterator__ where isKey is true even when for each is used
   Look at alpha Rhino... If the bug is gone we might consider using it since it has some ES5 stuff
   If the bug is still there we'll have to consider fixing it ourselves and cloning the rhino repo to build newer versions of js.jar
+- Implement cli.shell.javascript (cli.shell.repl?) banana based on Rhino's shell
+- Support doctest from within MonkeyScript
+- Write Jake task system
+- Bring io to a usable state
+- Migrate Jake to use the working io banana
