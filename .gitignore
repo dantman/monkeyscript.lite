@@ -1,4 +1,7 @@
 dist/
 *~
 *.class
-
+/test*.*
+/*.js
+/*.java
+/*registry*
