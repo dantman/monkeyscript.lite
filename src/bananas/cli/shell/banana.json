@@ -1,0 +1,8 @@
+{
+	"name": "JS Shell",
+	"shortname": "shell",
+	"namespace": "cli.shell",
+	"components": [
+		"shell.jar"
+	]
+}

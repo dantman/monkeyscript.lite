@@ -4,7 +4,7 @@ LIB_DIR = lib
 PREFIX = .
 DIST_DIR = ${PREFIX}/dist
 
-CLASSPATH = ${DIST_DIR}/build:${DIST_DIR}/js.jar
+CLASSPATH = ${DIST_DIR}/build:${DIST_DIR}/js.jar:${DIST_DIR}/jline-0.9.94.jar
 JAR = ${DIST_DIR}/monkeyscript.jar
 
 IDSWITCH = java -cp lib/rhino/build/classes/ org.mozilla.javascript.tools.idswitch.Main
@@ -25,6 +25,8 @@ ${DIST_DIR}/monkeyscript:
 
 ${DIST_DIR}/js.jar: ${LIB_DIR}/js.jar
 	cp ${LIB_DIR}/js.jar ${DIST_DIR}
+${DIST_DIR}/jline.jar: ${LIB_DIR}/jline-0.9.94.jar
+	cp ${LIB_DIR}/jline-0.9.94.jar ${DIST_DIR}/jline.jar
 
 ${DIST_DIR}/build/org/monkeyscript/lite/monkeyscript.js: ${SRC_DIR}/common/monkeyscript.js
 	cp ${SRC_DIR}/common/monkeyscript.js ${DIST_DIR}/build/org/monkeyscript/lite

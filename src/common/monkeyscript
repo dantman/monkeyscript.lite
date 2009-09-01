@@ -9,5 +9,5 @@ if [ ! -n "$MONKEYSCRIPT_HOME" ]; then
 	export MONKEYSCRIPT_HOME=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
 fi
 
-$JAVA -Xbootclasspath/p:"$MONKEYSCRIPT_HOME/js.jar" -jar $MONKEYSCRIPT_HOME/monkeyscript.jar "$@"
+$JAVA -Xbootclasspath/p:"$MONKEYSCRIPT_HOME/js.jar:$MONKEYSCRIPT_HOME/jline.jar" -jar "$MONKEYSCRIPT_HOME/monkeyscript.jar" "$@"
 

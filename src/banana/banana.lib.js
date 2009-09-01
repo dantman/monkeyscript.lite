@@ -25,9 +25,23 @@ function banana(q) {
 	
 	var _native = {}, exports = {};
 	if ( Kernel.platform.name === "Rhino" ) {
+		var packages;
+		if ( self.jars.length ) {
+			let urls = java.lang.reflect.Array.newInstance(java.net.URL, self.jars.length);
+			self.jars.forEach(function(path, i) {
+				var file = new java.io.File(path);
+				var url = jarFile.toURI().toURL();
+				urls[i] = url;
+			});
+			var cl = new java.net.URLClassLoader(urls);
+			packages = new Packages(cl);
+		}
+		
 		// We're using Rhino, for native we use a _native.js in the same dir as the banana
-		if ( Kernel.fs.canRead(self.path+'/_native.js') )
-			_native = globalExec(self.path+'/_native.js');
+		if ( Kernel.fs.canRead(self.path+'/_native.js') ) {
+			var fn = Kernel.globalExecWrapped(self.path+'/_native.js', '(function(_native, banana, self, exports) {', '//*/\n;return _native;\n})');
+			_native = fn.call(undefined, _native, banana, self, exports);
+		}
 	}
 	for each ( script in self.scripts ) {
 		// var arguments = global.arguments;?
@@ -72,6 +86,7 @@ banana.Meta = function(info) {
 	this.name = info.name;
 	this.shortname = info.shortname;
 	this.path = info.path;
+	this.jars = info.components.jars.map(function(f) { return info.path + Kernel.os.fileSeparator + f });
 	this.scripts = info.components.js.map(function(f) { return info.path + Kernel.os.fileSeparator + f });
 };
 

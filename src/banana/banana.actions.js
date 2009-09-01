@@ -20,9 +20,8 @@ actions.collect = function(registryLoc, bananaLocs) {
 				continue;
 			}
 			
-			var jsonText = Kernel.fs.readFile(bananaLoc);
+			var jsonText = Kernel.fs.readFile(bananaLoc).trim();
 			var json = JSON.parse(jsonText);
-			
 			if ( !json ) {
 				print("Warning: Invalid json in "+bananaLoc+", skipping banana");
 				continue;
@@ -41,7 +40,7 @@ actions.collect = function(registryLoc, bananaLocs) {
 			}
 			
 			var plantation = {};
-			var components = plantation.components = { js: [] };
+			var components = plantation.components = { js: [], jars: [] };
 			var version = json.version || "";
 			
 			plantation.name = json.name;
@@ -50,15 +49,23 @@ actions.collect = function(registryLoc, bananaLocs) {
 			if ( json.components )
 				json.components.forEach(function(component) {
 					if ( isString(component) ) {
-						component.endsWith('.js');
-						component = {
-							type: "js",
-							file: component
-						};
+						if ( component.endsWith('.js') ) {
+							component = {
+								type: "js",
+								file: component
+							};
+						} else if ( component.endsWith('.jar') ) {
+							component = {
+								type: "jar",
+								file: component
+							};
+						}
 					}
 					
 					if ( component.type === 'js' )
 						components.js.push(component.file);
+					else if ( component.type === 'jar' )
+						components.jars.push(component.file);
 				});
 			bananas[ns] = bananas[ns] || {};
 			bananas[ns][version] = plantation;

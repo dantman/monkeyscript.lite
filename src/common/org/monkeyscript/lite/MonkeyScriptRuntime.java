@@ -1,6 +1,10 @@
 package org.monkeyscript.lite;
 
+import java.io.InputStream;
+import java.io.PrintStream;
+
 import org.mozilla.javascript.*;
+import org.mozilla.javascript.tools.shell.ShellLine;
 
 /**
  * This is the class that implements extensions to the runtime
@@ -116,6 +120,42 @@ public class MonkeyScriptRuntime {
 	
 	public static String toRealString(char c) {
 		return Character.toString(c);
+	}
+	
+	/**
+	 * Get a InputStream that reads from stdin for the purpose of console interaction.
+	 * This may return something using jline rather than a normal stream for this reason
+	 */
+	private static boolean attemptedJLineLoad = false;
+	private static InputStream inStream = null;
+	public static InputStream getStdIn(Context cx, Scriptable scope) {
+		// See org.mozilla.javascript.tools.shell.Global#getIn
+		if (inStream == null && !attemptedJLineLoad) {
+			// Check if we can use JLine for better command line handling
+			InputStream jlineStream = ShellLine.getStream(scope);
+			if (jlineStream != null)
+				inStream = jlineStream;
+			attemptedJLineLoad = true;
+		}
+		return inStream == null ? System.in : inStream;
+	}
+	
+	/**
+	 * Get a PrintStream that prints to stdout for the purpose of console interaction.
+	 * This may return something using jline rather than a normal stream for this reason
+	 */
+	private static PrintStream outStream = null;
+	public static PrintStream getStdOut(Context cx, Scriptable scope) {
+		return outStream == null ? System.out : outStream;
+	}
+	
+	/**
+	 * Get a PrintStream that prints to stderr for the purpose of console interaction.
+	 * This may return something using jline rather than a normal stream for this reason
+	 */
+	private static PrintStream errStream = null;
+	public static PrintStream getStdErr(Context cx, Scriptable scope) {
+		return errStream == null ? System.err : errStream;
 	}
 	
 }
