@@ -16,5 +16,5 @@ if [ ! -n "$MONKEYSCRIPT_HOME" ]; then
 	fi
 fi
 
-$JAVA -Xbootclasspath/p:"$MONKEYSCRIPT_HOME/js.jar:$MONKEYSCRIPT_HOME/jline.jar" -jar "$MONKEYSCRIPT_HOME/monkeyscript.jar" "$@"
+$JAVA -Xbootclasspath/p:"$MONKEYSCRIPT_HOME/js.jar:$MONKEYSCRIPT_HOME/jline.jar" -jar "$MONKEYSCRIPT_HOME/monkeyscript.jar" -h banana "$@"
 

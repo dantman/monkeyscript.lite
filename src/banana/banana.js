@@ -9,6 +9,7 @@ var action = args.shift();
 
 if(!action) {
 	print("No action was specified.");
+	print("Valid actions: "+Object.keys(actions).join(', '));
 	Kernel.exit(1);
 }
 
