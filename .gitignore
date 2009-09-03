@@ -6,3 +6,5 @@ dist/
 /*.js
 /*.java
 /*registry*
+/setenv.sh
+/shell
