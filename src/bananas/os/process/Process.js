@@ -43,10 +43,21 @@ function ProcessFunction(executable) {
 				delete o.errors;
 				o.errors = out;
 				return out;
+			},
+			orDie: function orDie() {
+				if ( !o.ok )
+					Kernel.die(o.errors);
+				return o.output;
 			}
 		};
 		return o;
 	}
+	exe.assert = function assert() {
+		var o = exe.apply(this, arguments);
+		if ( !o.ok )
+			throw o.errors;
+		return o.output;
+	};
 	Object.defineConstant(exe, "executable", executable, true);
 	return exe;
 }
