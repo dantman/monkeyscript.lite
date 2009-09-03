@@ -11,6 +11,11 @@ BANANA_FILES = ${BANANA_DIST}/banana.js \
 	${BANANA_DIST}/banana.lib.js \
 	${BANANA_DIST}/README
 
+JAKE_SRC = ${SRC_DIR}/jake
+JAKE_DIST = ${DIST_DIR}/lib/jake
+JAKE_FILES = ${JAKE_DIST}/jake.js \
+	${JAKE_DIST}/jake.lib.js \
+
 CLASSPATH = ${BUILD_DIR}:${LIB_DIR}/js.jar:${LIB_DIR}/jline-0.9.94.jar
 JAR = ${DIST_DIR}/lib/monkeyscript.jar
 
@@ -26,7 +31,7 @@ lite: dist-deps ${JAR}
 
 # Dirs
 .PHONY: alldirs
-alldirs: ${BUILD_DIR} ${DIST_DIR} ${DIST_DIR}/bin ${DIST_DIR}/lib ${DIST_DIR}/lib/banana
+alldirs: ${BUILD_DIR} ${DIST_DIR} ${DIST_DIR}/bin ${DIST_DIR}/lib ${DIST_DIR}/lib/banana ${DIST_DIR}/lib/jake
 ${BUILD_DIR}:
 	@@mkdir -p ${BUILD_DIR}
 ${DIST_DIR}:
@@ -37,26 +42,37 @@ ${DIST_DIR}/lib:
 	@@mkdir -p ${DIST_DIR}/lib
 ${DIST_DIR}/lib/banana:
 	@@mkdir -p ${DIST_DIR}/lib/banana
+${DIST_DIR}/lib/jake:
+	@@mkdir -p ${DIST_DIR}/lib/jake
 
 # Copy things to dist dir
 .PHONY: dist-deps
-dist-deps: ${DIST_DIR}/bin/monkeyscript ${DIST_DIR}/lib/js.jar ${DIST_DIR}/lib/jline.jar dist-dep-banana
-${DIST_DIR}/bin/monkeyscript: alldirs
+dist-deps: alldirs ${DIST_DIR}/bin/monkeyscript ${DIST_DIR}/lib/js.jar ${DIST_DIR}/lib/jline.jar dist-dep-banana dist-dep-jake
+${DIST_DIR}/bin/monkeyscript: ${DIST_DIR}/bin
 	cp ${SRC_DIR}/common/monkeyscript ${DIST_DIR}/bin/
 	-chmod +x ${DIST_DIR}/bin/monkeyscript
-${DIST_DIR}/lib/js.jar: alldirs ${LIB_DIR}/js.jar
+${DIST_DIR}/lib/js.jar: ${DIST_DIR}/lib ${LIB_DIR}/js.jar
 	cp ${LIB_DIR}/js.jar ${DIST_DIR}/lib/
-${DIST_DIR}/lib/jline.jar: alldirs ${LIB_DIR}/jline-0.9.94.jar
+${DIST_DIR}/lib/jline.jar: ${DIST_DIR}/lib ${LIB_DIR}/jline-0.9.94.jar
 	cp ${LIB_DIR}/jline-0.9.94.jar ${DIST_DIR}/lib/jline.jar
 ## Banana
 .PHONY: dist-dep-banana
 dist-dep-banana: $(BANANA_FILES) ${DIST_DIR}/bin/banana
-$(BANANA_FILES): ${BANANA_DIST}/% : ${BANANA_SRC}/% alldirs
+$(BANANA_FILES): ${BANANA_DIST}/% : ${BANANA_SRC}/% ${BANANA_DIST}
 	@@echo "Copying banana library file ${BANANA_SRC}/$(*F) to ${BANANA_DIST}/"
-	cp ${BANANA_SRC}/$(*F) ${BANANA_DIST}/
-${DIST_DIR}/bin/banana: alldirs
+	@@cp ${BANANA_SRC}/$(*F) ${BANANA_DIST}/
+${DIST_DIR}/bin/banana: ${DIST_DIR}/bin
 	cp ${SRC_DIR}/banana/banana ${DIST_DIR}/bin/
 	-chmod +x ${DIST_DIR}/bin/banana
+## Jake
+.PHONY: dist-dep-jake
+dist-dep-jake: $(JAKE_FILES) ${DIST_DIR}/bin/jake
+$(JAKE_FILES): ${JAKE_DIST}/% : ${JAKE_SRC}/% ${JAKE_DIST}
+	@@echo "Copying jake library file ${JAKE_SRC}/$(*F) to ${JAKE_DIST}/"
+	@@cp ${JAKE_SRC}/$(*F) ${JAKE_DIST}/
+${DIST_DIR}/bin/jake: ${DIST_DIR}/bin
+	cp ${SRC_DIR}/jake/jake ${DIST_DIR}/bin/
+	-chmod +x ${DIST_DIR}/bin/jake
 
 # JAR + Deps
 ## Class files for JAR
@@ -66,7 +82,7 @@ ${BUILD_DIR}/org/monkeyscript/lite/*.class: ${SRC_DIR}/common/org/monkeyscript/l
 	javac -cp ${CLASSPATH} -d ${BUILD_DIR} ${SRC_DIR}/common/org/monkeyscript/lite/*.java
 ## .js inside jar
 .PHONY: jardeps
-jardeps: compile ${BUILD_DIR}/org/monkeyscript/lite/monkeyscript.js ${BUILD_DIR}/org/monkeyscript/lite/monkeyscript.java.js ${BUILD_DIR}/org/monkeyscript/lite/wrench17.js ${BUILD_DIR}/org/monkeyscript/lite/json2.js
+jardeps: ${BUILD_DIR} ${BUILD_DIR}/org/monkeyscript/lite/*.class ${BUILD_DIR}/org/monkeyscript/lite/monkeyscript.js ${BUILD_DIR}/org/monkeyscript/lite/monkeyscript.java.js ${BUILD_DIR}/org/monkeyscript/lite/wrench17.js ${BUILD_DIR}/org/monkeyscript/lite/json2.js
 ${BUILD_DIR}/org/monkeyscript/lite/monkeyscript.js: ${BUILD_DIR} ${SRC_DIR}/common/monkeyscript.js
 	cp ${SRC_DIR}/common/monkeyscript.js ${BUILD_DIR}/org/monkeyscript/lite
 ${BUILD_DIR}/org/monkeyscript/lite/monkeyscript.java.js: ${BUILD_DIR} ${SRC_DIR}/common/monkeyscript.java.js
@@ -76,7 +92,7 @@ ${BUILD_DIR}/org/monkeyscript/lite/wrench17.js: ${BUILD_DIR} ${LIB_DIR}/wrench17
 ${BUILD_DIR}/org/monkeyscript/lite/json2.js: ${BUILD_DIR} ${LIB_DIR}/json2.js
 	cp ${LIB_DIR}/json2.js ${BUILD_DIR}/org/monkeyscript/lite
 ## Build the JAR
-${JAR}: alldirs jardeps
+${JAR}: ${DIST_DIR} ${BUILD_DIR} ${BUILD_DIR}/org/monkeyscript/lite/*.class ${BUILD_DIR}/org/monkeyscript/lite/monkeyscript.js ${BUILD_DIR}/org/monkeyscript/lite/monkeyscript.java.js ${BUILD_DIR}/org/monkeyscript/lite/wrench17.js ${BUILD_DIR}/org/monkeyscript/lite/json2.js
 	jar cmf ${SRC_DIR}/common/manifest ${JAR} -C ${BUILD_DIR} org/monkeyscript/lite/
 
 # Cleanup
