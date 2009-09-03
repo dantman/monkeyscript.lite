@@ -1,4 +1,22 @@
 
+/** MonkeyScript Lite specific helper. Allow _native code to easily convert arrays to java arrays */
+Array.prototype.toJavaArray = function toJavaArray(type) {
+	var jarr = java.lang.reflect.Array.newInstance(type, this.length);
+	for(let i=0; i<this.length; i++) {
+		let item = this[i];
+		if ( item instanceof type )
+			jarr[i] = item;
+		else {
+			// Special case some primitives
+			if ( isString(item) && type === java.lang.String )
+				jarr[i] = type(item);
+			else
+				throw new TypeError("Invalid type of data, cannot convert "+item+" to "+type);
+		}
+	}
+	return jarr;
+};
+
 include.once = includeOnce;
 delete global.includeOnce;
 

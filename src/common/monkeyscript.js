@@ -1,4 +1,8 @@
 
+Object.defineConstant = function defineConstant(obj, prop, value, enumerable) {
+	return Object.defineProperty(obj, prop, { value:value, enumerable:enumerable===true, writable:false, configurable:false });
+};
+
 var monkeyscript = {
 	version: '0.0.0.0a',
 	hooks: {},

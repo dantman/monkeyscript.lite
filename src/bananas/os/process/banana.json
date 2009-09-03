@@ -1,0 +1,9 @@
+{
+	"name": "Process",
+	"shortname": "process",
+	"namespace": "os.process",
+	"oneversion": true,
+	"components": [
+		"Process.js"
+	]
+}
