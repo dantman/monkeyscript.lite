@@ -1,12 +1,30 @@
 package org.monkeyscript.bananas.cli.shell;
 
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.UndeclaredThrowableException;
+
 import org.mozilla.javascript.*;
 import org.monkeyscript.lite.*;
 
+import org.mozilla.javascript.tools.ToolErrorReporter; // @todo Remove need for this code
+
 public class Shell extends IdScriptableObject implements Function {
+	
+	public String getClassName() {
+		return "Shell";
+	}
 	
 	private int oldOptimizationLevel;
 	private NativeArray history;
+	
+	public Scriptable construct(Context cx, Scriptable scope, Object[] args) {
+		return null; // @todo Implement actual script class
+	}
 	
 	public Object call(Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
 		// Based off org.mozilla.javascript.tools.shell.Main#processSource
@@ -52,17 +70,26 @@ public class Shell extends IdScriptableObject implements Function {
 					break;
 				ps.print(codeContinuePrompt);
 			}
-			Script script = loadScriptFromSource(cx, source, "<stdin>", lineno, null);
+			Script script = cx.compileString(source, "<stdin>", lineno, null);
 			if (script != null) {
-				Object result = evaluateScript(script, cx, global);
-				// Avoid printing out undefined or function definitions.
-				if (result != Context.getUndefinedValue() && !(result instanceof Function && source.trim().startsWith("function"))) {
-					try { ps.println(Context.toString(result));
-					} catch (RhinoException rex) {
-						ToolErrorReporter.reportException(cx.getErrorReporter(), rex);
+				try {
+					Object result = script.exec(cx, scope); // @todo should we grab the top level scope?
+					// Avoid printing out undefined or function definitions.
+					if (result != Context.getUndefinedValue() && !(result instanceof Function && source.trim().startsWith("function"))) {
+						try { ps.println(Context.toString(result));
+						} catch (RhinoException rex) {
+							ToolErrorReporter.reportException(cx.getErrorReporter(), rex);
+						}
 					}
+					history.put((int)history.getLength(), history, source);
+				} catch (RhinoException rex) {
+					ToolErrorReporter.reportException(cx.getErrorReporter(), rex);
+				} catch (VirtualMachineError ex) {
+					// Treat StackOverflow and OutOfMemory as runtime errors
+					ex.printStackTrace();
+					String msg = ToolErrorReporter.getMessage("msg.uncaughtJSException", ex.toString());
+					Context.reportError(msg);
 				}
-				history.put((int)history.getLength(), history, source);
 			}
 		}
 		ps.println();
@@ -70,6 +97,7 @@ public class Shell extends IdScriptableObject implements Function {
 		// Reset optimization level
 		oldOptimizationLevel = cx.getOptimizationLevel();
 		
+		return Context.getUndefinedValue();
 	}
 	
 }

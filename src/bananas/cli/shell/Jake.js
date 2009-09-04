@@ -32,6 +32,7 @@ task("build", function(options) {
 	mkdir("classes");
 	var CLASSPATH = options.CLASSPATH || "../../../../dist/lib/js.jar:../../../../dist/lib/monkeyscript.jar";
 	javac("-cp", CLASSPATH, "-d", "classes", "org/monkeyscript/bananas/cli/shell/Shell.java").orDie();
+	jar("cmf", "Manifest", "shell.jar", "-C", "classes", "org/monkeyscript/bananas/cli/shell/").orDie();
 });
 
 task("clean", function(options) {
