@@ -36,7 +36,7 @@ public class MonkeyScript {
 			try {
 				quickRunScript( cx, global, "monkeyscript.js" );
 				Global.runQueue( cx, global );
-			} catch ( RhinoException e ) {
+			} catch ( JavaScriptException e ) {
 				StringBuffer buf = new StringBuffer();
 				buf.append("Error in main thread");
 				String sourceName = e.sourceName();
