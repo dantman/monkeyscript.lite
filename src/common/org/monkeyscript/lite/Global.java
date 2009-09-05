@@ -59,9 +59,6 @@ public class Global extends ImporterTopLevel {
 	public static Object print(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
 		PrintStream out = System.out;
 		for (int i=0; i < args.length; i++) {
-			if (i > 0)
-				out.print(" ");
-
 			// Convert the arbitrary JavaScript value into a string form.
 			String s = Context.toString(args[i]);
 
