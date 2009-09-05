@@ -1,6 +1,7 @@
 package org.monkeyscript.lite;
 
 import java.util.Arrays;
+import java.io.UnsupportedEncodingException;
 
 import org.mozilla.javascript.*;
 
@@ -30,10 +31,6 @@ final class NativeBlob extends IdScriptableObject {
 		bytes = b;
 	}
 	
-	static private Object quickNewNativeBlob(Context cx, Scriptable scope, Object target) {
-		return ScriptRuntime.newObject(cx, scope, "Blob", new Object[] { target });
-	}
-	
 	@Override
 	public String getClassName() {
 		return "Blob";
@@ -41,7 +38,8 @@ final class NativeBlob extends IdScriptableObject {
 	
 	private static final int
 		Id_length                    =  1,
-		MAX_INSTANCE_ID              =  1;
+		Id_contentConstructor        =  2,
+		MAX_INSTANCE_ID              =  2;
 	
 	@Override
 	protected int getMaxInstanceId() {
@@ -53,12 +51,16 @@ final class NativeBlob extends IdScriptableObject {
 		if (s.equals("length")) {
 			return instanceIdInfo(DONTENUM | READONLY | PERMANENT, Id_length);
 		}
+		if (s.equals("contentConstructor")) {
+			return instanceIdInfo(DONTENUM|READONLY|PERMANENT, Id_contentConstructor);
+		}
 		return super.findInstanceIdInfo(s);
 	}
 	
 	@Override
 	protected String getInstanceIdName(int id) {
 		if (id == Id_length) { return "length"; }
+		if (id == Id_contentConstructor) { return "contentConstructor"; }
 		return super.getInstanceIdName(id);
 	}
 	
@@ -67,13 +69,16 @@ final class NativeBlob extends IdScriptableObject {
 		if (id == Id_length) {
 			return ScriptRuntime.wrapInt(bytes.length);
 		}
+		if (id == Id_contentConstructor) {
+			return ScriptRuntime.getTopLevelProp(this.getParentScope(), "Blob");
+		}
 		return super.getInstanceIdValue(id);
 	}
 	
 	@Override
 	protected void fillConstructorProperties(IdFunctionObject ctor) {
 		addIdFunctionProperty(ctor, BLOB_TAG, ConstructorId_byteAt, "byteAt", 2);
-		addIdFunctionProperty(ctor, BLOB_TAG, ConstructorId_intAt, "intAt", 2);
+		addIdFunctionProperty(ctor, BLOB_TAG, ConstructorId_valueAt, "valueAt", 2);
 		addIdFunctionProperty(ctor, BLOB_TAG, ConstructorId_indexOf, "indexOf", 2);
 		addIdFunctionProperty(ctor, BLOB_TAG, ConstructorId_lastIndexOf, "lastIndexOf", 2);
 		addIdFunctionProperty(ctor, BLOB_TAG, ConstructorId_split, "split", 3);
@@ -88,16 +93,18 @@ final class NativeBlob extends IdScriptableObject {
 		int arity;
 		switch (id) {
 			case Id_constructor:       arity=1; s="constructor";       break;
-			case Id_toString:          arity=0; s="toString";          break;
+			case Id_toString:          arity=1; s="toString";          break;
+			case Id_toBlob:            arity=2; s="toBlob";            break;
+			case Id_toArray:           arity=1; s="toArray";           break;
 			case Id_toSource:          arity=0; s="toSource";          break;
 			case Id_valueOf:           arity=0; s="valueOf";           break;
 			case Id_byteAt:            arity=1; s="byteAt";            break;
-			case Id_intAt:             arity=1; s="intAt";             break;
+			case Id_valueAt:           arity=1; s="valueAt";           break;
 			case Id_indexOf:           arity=1; s="indexOf";           break;
 			case Id_lastIndexOf:       arity=1; s="lastIndexOf";       break;
 			case Id_split:             arity=2; s="split";             break;
-			case Id_concat:            arity=1; s="concat";            break;
 			case Id_slice:             arity=2; s="slice";             break;
+			case Id_concat:            arity=1; s="concat";            break;
 			case Id_equals:            arity=1; s="equals";            break;
 			default: throw new IllegalArgumentException(String.valueOf(id));
 		}
@@ -114,7 +121,7 @@ final class NativeBlob extends IdScriptableObject {
 			for(;;) {
 				switch (id) {
 					case ConstructorId_byteAt:
-					case ConstructorId_intAt:
+					case ConstructorId_valueAt:
 					case ConstructorId_indexOf:
 					case ConstructorId_lastIndexOf:
 					case ConstructorId_split:
@@ -161,12 +168,56 @@ final class NativeBlob extends IdScriptableObject {
 						}
 					}*/
 					
-					case Id_toString:
-						return thisObj.toString();
+					case Id_toString: {
+						if ( args.length > 0 ) {
+							String enc = ScriptRuntime.toString(args[0]);
+							try {
+								return new String(realThis(thisObj, f).bytes, enc).intern();
+							} catch ( UnsupportedEncodingException e ) {
+								throw ScriptRuntime.typeError("Unknown encoding "+enc+" passed to blob.toString");
+							}
+						}
+						return realThis(thisObj, f).toString();
+					}
+					
+					case Id_toBlob: {
+						if ( args.length >= 2 ) {
+							String fromEnc = ScriptRuntime.toString(args[0]);
+							String toEnc = ScriptRuntime.toString(args[1]);
+							try {
+								return MonkeyScriptRuntime.newBlob((new String(realThis(thisObj, f).bytes, fromEnc)).getBytes(toEnc), scope);
+							} catch ( UnsupportedEncodingException e ) {
+								throw ScriptRuntime.typeError("Unknown encoding passed to blob.toBlob");
+							}
+						} else if ( args.length == 1 ) {
+							throw ScriptRuntime.typeError("toBlob called on blob with one argument, caller likely assumed this blob was a string");
+						} else {
+							return realThis(thisObj, f);
+						}
+					}
 					
 					case Id_valueOf:
 						return realThis(thisObj, f);
 					
+					case Id_toArray: {
+						byte[] b = realThis(thisObj, f).bytes;
+						String enc = null;
+						if ( args.length > 0 )
+							enc = ScriptRuntime.toString(args[0]);
+						Scriptable array = cx.newArray(scope, b.length);
+						try {
+							for(int i=0; i<b.length; ++i) {
+								ScriptableObject.putProperty(array, i,
+									enc != null ?
+									(new String(b, i, 1, enc)).intern() :
+									MonkeyScriptRuntime.byteToHighInt(b[i]));
+							}
+						} catch ( UnsupportedEncodingException e ) {
+							throw ScriptRuntime.typeError("Unknown encoding "+enc+" passed to blob.toArray");
+						}
+						return array;
+					}
+    				
 					case Id_toSource: {
 						byte[] b = realThis(thisObj, f).bytes;
 						StringBuffer sb = new StringBuffer("(new Blob([]))");
@@ -177,9 +228,11 @@ final class NativeBlob extends IdScriptableObject {
 						}
 						return sb.toString();
 					}
-    
+					
 					case Id_byteAt:
-					case Id_intAt: {
+					case Id_valueAt:
+					case Id_byteCodeAt:
+					case Id_codeAt: {
 						byte[] target = realThis(thisObj, f).bytes;
 						double pos = ScriptRuntime.toInteger(args, 0);
 						if (pos < 0 || pos >= target.length) {
@@ -187,10 +240,10 @@ final class NativeBlob extends IdScriptableObject {
 							else return ScriptRuntime.NaNobj;
 						}
 						byte b = target[(int)pos];
-						if (id == Id_byteAt) return quickNewNativeBlob(cx, scope, b);
+						if (id == Id_byteAt || id == Id_valueAt) return MonkeyScriptRuntime.newBlob(b, scope);
 						else return ScriptRuntime.wrapInt(MonkeyScriptRuntime.byteToHighInt(b));
 					}
-    
+    				
 					case Id_indexOf:
 					case Id_lastIndexOf:
 						if ( args.length == 0 )
@@ -203,16 +256,16 @@ final class NativeBlob extends IdScriptableObject {
 						if ( id != Id_lastIndexOf )
 							return ScriptRuntime.wrapInt(js_indexOf(realThis(thisObj, f).bytes, needle, offset));
 						return ScriptRuntime.wrapInt(js_lastIndexOf(realThis(thisObj, f).bytes, needle, offset));
-    
+    				
 					case Id_split:
 						return js_split(cx, scope, realThis(thisObj, f).bytes, args);
-    
-					case Id_concat:
-						return quickNewNativeBlob(cx, scope, js_concat(realThis(thisObj, f).bytes, args));
-    
+    				
 					case Id_slice:
-						return quickNewNativeBlob(cx, scope, js_slice(realThis(thisObj, f).bytes, args));
-    
+						return MonkeyScriptRuntime.newBlob(js_slice(realThis(thisObj, f).bytes, args), scope);
+    				
+					case Id_concat:
+						return MonkeyScriptRuntime.newBlob(js_concat(realThis(thisObj, f).bytes, args), scope);
+    				
 					case Id_equals: {
 						boolean eq = false;
 						byte[] b1 = realThis(thisObj, f).bytes;
@@ -249,7 +302,7 @@ final class NativeBlob extends IdScriptableObject {
 		if (0 <= index && index < bytes.length) {
 			Context cx = Context.getCurrentContext();
 			Scriptable scope = start.getParentScope();
-			return quickNewNativeBlob(cx, scope, bytes[index]);
+			return MonkeyScriptRuntime.newBlob(bytes[index], scope);
 		}
 		return super.get(index, start);
 	}
@@ -325,7 +378,7 @@ final class NativeBlob extends IdScriptableObject {
 		// don't check against undefined, because we want
 		// 'fooundefinedbar'.split(void 0) to split to ['foo', 'bar']
 		if (args.length < 1) {
-			result.put(0, result, quickNewNativeBlob(cx, scope, target));
+			result.put(0, result, MonkeyScriptRuntime.newBlob(target, scope));
 			return result;
 		}
 		
@@ -378,38 +431,6 @@ final class NativeBlob extends IdScriptableObject {
         return result;
 	}
 	
-	private static byte[] js_concat(byte[] target, Object[] args) {
-		int N = args.length;
-		if (N == 0) { return target; }
-		else if (N == 1) {
-			byte[] arg = MonkeyScriptRuntime.toByteArray(args[0]);
-			byte[] newblob = Arrays.copyOf(target, target.length+arg.length);
-			
-			for (int i = 0; i != arg.length; ++i)
-				newblob[target.length+i] = arg[i];
-			
-			return newblob;
-		}
-
-		// Find total capacity for the final blob
-		int size = target.length;
-		byte[][] argsAsBytes = new byte[N][];
-		for (int i = 0; i != N; ++i) {
-			byte[] b = MonkeyScriptRuntime.toByteArray(args[i]);
-			argsAsBytes[i] = b;
-			size += b.length;
-		}
-
-		byte[] result = Arrays.copyOf(target, size);
-		int index = target.length;
-		for (int byteArrayN = 0; byteArrayN != N; ++byteArrayN) {
-			byte[] b = argsAsBytes[byteArrayN];
-			for (int i = 0; i != b.length; ++i, ++index)
-				result[index] = b[i];
-		}
-		return result;
-	}
-	
 	private static byte[] js_slice(byte[] target, Object[] args) {
 		// Based on NativeString#js_slice
 		if (args.length != 0) {
@@ -444,32 +465,71 @@ final class NativeBlob extends IdScriptableObject {
 		return target;
 	}
 	
+	private static byte[] js_concat(byte[] target, Object[] args) {
+		int N = args.length;
+		if (N == 0) { return target; }
+		else if (N == 1) {
+			byte[] arg = MonkeyScriptRuntime.toByteArray(args[0]);
+			byte[] newblob = Arrays.copyOf(target, target.length+arg.length);
+			
+			for (int i = 0; i != arg.length; ++i)
+				newblob[target.length+i] = arg[i];
+			
+			return newblob;
+		}
+
+		// Find total capacity for the final blob
+		int size = target.length;
+		byte[][] argsAsBytes = new byte[N][];
+		for (int i = 0; i != N; ++i) {
+			byte[] b = MonkeyScriptRuntime.toByteArray(args[i]);
+			argsAsBytes[i] = b;
+			size += b.length;
+		}
+
+		byte[] result = Arrays.copyOf(target, size);
+		int index = target.length;
+		for (int byteArrayN = 0; byteArrayN != N; ++byteArrayN) {
+			byte[] b = argsAsBytes[byteArrayN];
+			for (int i = 0; i != b.length; ++i, ++index)
+				result[index] = b[i];
+		}
+		return result;
+	}
+	
 // #string_id_map#
 	
 	@Override
 	protected int findPrototypeId(String s) {
 		int id;
-// #generated# Last update: 2009-07-20 19:04:25 PDT
+// #generated# Last update: 2009-09-05 03:49:58 PDT
         L0: { id = 0; String X = null; int c;
             L: switch (s.length()) {
             case 5: c=s.charAt(1);
                 if (c=='l') { X="slice";id=Id_slice; }
-                else if (c=='n') { X="intAt";id=Id_intAt; }
                 else if (c=='p') { X="split";id=Id_split; }
                 break L;
-            case 6: c=s.charAt(0);
-                if (c=='b') { X="byteAt";id=Id_byteAt; }
-                else if (c=='c') { X="concat";id=Id_concat; }
-                else if (c=='e') { X="equals";id=Id_equals; }
-                break L;
+            case 6: switch (s.charAt(2)) {
+                case 'B': X="toBlob";id=Id_toBlob; break L;
+                case 'd': X="codeAt";id=Id_codeAt; break L;
+                case 'n': X="concat";id=Id_concat; break L;
+                case 't': X="byteAt";id=Id_byteAt; break L;
+                case 'u': X="equals";id=Id_equals; break L;
+                } break L;
             case 7: c=s.charAt(0);
                 if (c=='i') { X="indexOf";id=Id_indexOf; }
-                else if (c=='v') { X="valueOf";id=Id_valueOf; }
+                else if (c=='t') { X="toArray";id=Id_toArray; }
+                else if (c=='v') {
+                    c=s.charAt(6);
+                    if (c=='f') { X="valueOf";id=Id_valueOf; }
+                    else if (c=='t') { X="valueAt";id=Id_valueAt; }
+                }
                 break L;
             case 8: c=s.charAt(3);
                 if (c=='o') { X="toSource";id=Id_toSource; }
                 else if (c=='t') { X="toString";id=Id_toString; }
                 break L;
+            case 10: X="byteCodeAt";id=Id_byteCodeAt; break L;
             case 11: c=s.charAt(0);
                 if (c=='c') { X="constructor";id=Id_constructor; }
                 else if (c=='l') { X="lastIndexOf";id=Id_lastIndexOf; }
@@ -485,23 +545,27 @@ final class NativeBlob extends IdScriptableObject {
     private static final int
 		Id_constructor               = 1,
 		Id_toString                  = 2,
-		Id_toSource                  = 3,
-		Id_valueOf                   = 4,
-		Id_byteAt                    = 5,
-		Id_intAt                     = 6,
-		Id_indexOf                   = 7,
-		Id_lastIndexOf               = 8,
-		Id_split                     = 9,
-		Id_concat                    = 10,
-		Id_slice                     = 11,
-		Id_equals                    = 12,
-		MAX_PROTOTYPE_ID             = 12;
+		Id_toBlob                    = 4,
+		Id_toArray                   = 5,
+		Id_toSource                  = 6,
+		Id_valueOf                   = 7,
+		Id_byteAt                    = 8,
+		Id_valueAt                   = 9,
+		Id_byteCodeAt                = 10,
+		Id_codeAt                    = 11,
+		Id_indexOf                   = 12,
+		Id_lastIndexOf               = 13,
+		Id_concat                    = 14,
+		Id_split                     = 15,
+		Id_slice                     = 16,
+		Id_equals                    = 17,
+		MAX_PROTOTYPE_ID             = 17;
 	
 // #/string_id_map#
 	
 	private static final int 
 		ConstructorId_byteAt         = -Id_byteAt,
-		ConstructorId_intAt          = -Id_intAt,
+		ConstructorId_valueAt        = -Id_valueAt,
 		ConstructorId_indexOf        = -Id_indexOf,
 		ConstructorId_lastIndexOf    = -Id_lastIndexOf,
 		ConstructorId_split          = -Id_split,

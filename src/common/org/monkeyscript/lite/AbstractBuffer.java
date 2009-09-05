@@ -13,6 +13,11 @@ abstract class AbstractBuffer extends IdScriptableObject {
 		return (getTypeTag() + "Buffer").intern();
 	}
 	
+	@Override
+	public String getClassName() {
+		return getTag();
+	}
+	
 	protected static final int
 		Id_length                    =  1,
 		Id_contentConstructor        =  2,
@@ -39,16 +44,6 @@ abstract class AbstractBuffer extends IdScriptableObject {
 		if (id == Id_length) { return "length"; }
 		if (id == Id_contentConstructor) { return "contentConstructor"; }
 		return super.getInstanceIdName(id);
-	}
-	
-	@Override
-	public String getClassName() {
-		return getTag();
-	}
-	
-	@Override
-	public String toString() {
-		return ("[" + getClassName() + " length=" + length + "]").intern();
 	}
 	
 	@Override
@@ -120,6 +115,11 @@ abstract class AbstractBuffer extends IdScriptableObject {
 				}
 				throw new IllegalArgumentException(String.valueOf(id));
 			}
+	}
+	
+	@Override
+	public String toString() {
+		return ("[" + getClassName() + " length=" + length + "]").intern();
 	}
 	
 	abstract protected Object jsConstructor(Context cx, Scriptable scope, Object[] args);
