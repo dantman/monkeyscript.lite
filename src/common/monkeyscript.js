@@ -60,12 +60,12 @@ if ( monkeyscript.hookName ) {
 	if ( scriptName )
 		include(scriptName);
 	else
-		throw new Error("The hook "+monkeyscript.hookName+" does not exist");
+		Kernel.die("The hook "+monkeyscript.hookName+" does not exist");
 } else if ( monkeyscript.scriptName ) {
 	if ( monkeyscript.scriptName.startsWith('javascript:') )
 		eval(monkeyscript.scriptName.substr('javascript:'.length));
 	else
 		include(monkeyscript.scriptName);
 } else
-	throw new Error("No script specified");
+	Kernel.die("No script specified");
 
