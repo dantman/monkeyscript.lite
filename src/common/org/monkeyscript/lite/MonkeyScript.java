@@ -7,10 +7,7 @@ import java.net.URISyntaxException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Script;
-import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.*;
 
 public class MonkeyScript {
 	
@@ -36,9 +33,33 @@ public class MonkeyScript {
 			quickRunScript( cx, global, "json2.js" );
 			quickRunScript( cx, global, "wrench17.js" );
 			quickRunScript( cx, global, "monkeyscript.java.js" );
-			quickRunScript( cx, global, "monkeyscript.js" );
-			Global.runQueue( cx, global );
-			
+			try {
+				quickRunScript( cx, global, "monkeyscript.js" );
+				Global.runQueue( cx, global );
+			} catch ( RhinoException e ) {
+				StringBuffer buf = new StringBuffer();
+				buf.append("Error in main thread");
+				String sourceName = e.sourceName();
+				int lineNumber = e.lineNumber();
+				String lineSource = e.lineSource();
+				int columnNumber = e.columnNumber();
+				buf.append(" (");
+				if ( sourceName != null )
+					buf.append(sourceName);
+				buf.append(":");
+				buf.append(lineNumber);
+				if ( columnNumber > 0 ) {
+					buf.append("#");
+					buf.append(columnNumber);
+				}
+				buf.append(")");
+				System.err.println(buf.toString());
+				if ( lineSource != null )
+					System.err.println(lineSource);
+				System.err.println(e.details());
+				
+				System.err.println(e.getScriptStackTrace());
+			}
 		} finally {
 			Context.exit();
 		}
