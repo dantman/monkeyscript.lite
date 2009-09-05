@@ -5,7 +5,7 @@ function BufferStream(buf) {
 		contentConstructor: buf.contentConstructor,
 		read: function(len, bufNoSkip) {
 			if ( this.position >= buf.length )
-				throw Stream.EOF;
+				return Stream.EOF;
 			if ( !bufNoSkip )
 				return { length: len };
 			return buf.slice(this.position, len);

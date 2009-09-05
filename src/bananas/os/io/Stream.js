@@ -28,6 +28,8 @@ function read(fnRead, len, bufNoSkip) {
 		// Do we need to return and short circut position addition?
 	} else {
 		var data = fnRead.call(this, len, bufNoSkip);
+		if ( data === Stream.EOF )
+			data = this.contentConstructor();
 	}
 	this.position += data.length;
 	return data;
@@ -35,26 +37,18 @@ function read(fnRead, len, bufNoSkip) {
 
 function wrapRead(fnRead) {
 	return function(len) {
-		try {
-			return read.call(this, fnRead, len, true);
-		} catch ( e if e === Stream.EOF ) {
-			return this.contentConstructor();
-		}
+		return read.call(this, fnRead, len, true);
 	};
 }
 
 function wrapSkip(fnRead) {
 	return function(len) {
-		try {
-			var n = read.call(this, fnRead, len, false);
-			if ( !isNumber(n) )
-				// If there is no special handling of .skip data is likely
-				// returned instead of a length, pull length from that
-				n = n.length;
-			return n;
-		} catch ( e if e === Stream.EOF ) {
-			return this.contentConstructor();
-		}
+		var n = read.call(this, fnRead, len, false);
+		if ( !isNumber(n) )
+			// If there is no special handling of .skip data is likely
+			// returned instead of a length, pull length from that
+			n = n.length;
+		return n;
 	};
 }
 
