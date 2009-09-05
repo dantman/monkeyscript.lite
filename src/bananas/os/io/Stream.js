@@ -95,8 +95,7 @@ Stream.prototype.yank = function(len) {
 		return this.read();
 	
 	// Open a buffer of the same type as the stream
-	var buf = new Buffer();
-	buf.text = this.text;
+	var buf = new Buffer(this.contentConstructor);
 	
 	var max = len;
 	do {
