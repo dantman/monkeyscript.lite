@@ -28,21 +28,26 @@ public class ArrayUtils {
 	}
 	
 	public static Object copyOf(Object src, int newLength) {
-		if ( src.getClass() == byte[].class )
-			return Arrays.copyOf((byte[])src, newLength);
-		if ( src.getClass() == char[].class )
-			return Arrays.copyOf((char[])src, newLength);
-		throw illegal();
+		Object copy = newArray(src, newLength);
+		transfer(src, 0, copy, 0, Math.min(length(src), newLength));
+		return copy;
 	}
 	
 	/**
 	 * Return a new empty array of the same type as the one passed
 	 */
 	public static Object newEmpty(Object src) {
+		return newArray(src, 0);
+	}
+	
+	/**
+	 * Return a new array of the same type as the one passed
+	 */
+	public static Object newArray(Object src, int len) {
 		if ( src.getClass() == byte[].class )
-			return new byte[0];
+			return new byte[len];
 		if ( src.getClass() == char[].class )
-			return new char[0];
+			return new char[len];
 		throw illegal();
 	}
 	
