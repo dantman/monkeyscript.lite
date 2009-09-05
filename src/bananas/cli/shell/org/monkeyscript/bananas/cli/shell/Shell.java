@@ -19,6 +19,11 @@ public class Shell extends IdScriptableObject implements Function {
 		return "Shell";
 	}
 	
+	static void init(Scriptable scope, boolean sealed) {
+		Shell obj = new Shell();
+		obj.exportAsJSClass(0, scope, sealed);
+	}
+	
 	private int oldOptimizationLevel;
 	private NativeArray history;
 	
