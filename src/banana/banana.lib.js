@@ -40,7 +40,7 @@ function banana(q) {
 		// We're using Rhino, for native we use a _native.js in the same dir as the banana
 		if ( Kernel.fs.canRead(self.path+'/_native.js') ) {
 			var fn = Kernel.globalExecWrapped(self.path+'/_native.js', '(function(_native, _jar, banana, self, exports) {', '//*/\n;return _native;\n})');
-			_native = fn.call(undefined, _jar, _native, banana, self, exports);
+			_native = fn.call(undefined, _native, _jar, banana, self, exports);
 		}
 	}
 	for each ( script in self.scripts ) {
