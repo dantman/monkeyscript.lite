@@ -56,12 +56,11 @@ for each( let rc in monkeyscript.rc ) {
 }
 
 if ( monkeyscript.hookName ) {
-	let scriptName = monkeyscript.hooks[monkeyscript.hookName];
-	if ( scriptName )
-		include(scriptName);
-	else
+	monkeyscript.scriptName = monkeyscript.hooks[monkeyscript.hookName];
+	if ( !monkeyscript.scriptName )
 		Kernel.die("The hook "+monkeyscript.hookName+" does not exist");
-} else if ( monkeyscript.scriptName ) {
+}
+if ( monkeyscript.scriptName ) {
 	if ( monkeyscript.scriptName.startsWith('javascript:') )
 		eval(monkeyscript.scriptName.substr('javascript:'.length));
 	else
