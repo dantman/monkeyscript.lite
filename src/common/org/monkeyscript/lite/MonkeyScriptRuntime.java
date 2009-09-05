@@ -162,13 +162,13 @@ public class MonkeyScriptRuntime {
 		return errStream == null ? System.err : errStream;
 	}
 	
-	public static Object createJarLoader(Context cx, Scriptable scope, File[] jarFiles) {
+	/*public static Object createJarLoader(Context cx, Scriptable scope, File[] jarFiles) {
 		URL[] urls = new URL[jarFiles.length];
 		for(int i=0; i<jarFiles.length; ++i) {
 			urls[i] = jarFiles[i].toURI().toURL();
 		}
 		URLClassLoader cl = new URLClassLoader(urls);
 		return NativeJavaTopPackage.construct(cx, scope, new Object[] { cl });
-	}
+	}*/
 	
 }
