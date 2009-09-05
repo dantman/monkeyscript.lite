@@ -2,6 +2,10 @@ package org.monkeyscript.lite;
 
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.io.File;
+
+import java.net.URL;
+import java.net.URLClassLoader;
 
 import org.mozilla.javascript.*;
 import org.mozilla.javascript.tools.shell.ShellLine;
@@ -156,6 +160,15 @@ public class MonkeyScriptRuntime {
 	private static PrintStream errStream = null;
 	public static PrintStream getStdErr(Context cx, Scriptable scope) {
 		return errStream == null ? System.err : errStream;
+	}
+	
+	public static Object createJarLoader(Context cx, Scriptable scope, File[] jarFiles) {
+		URL[] urls = new URL[jarFiles.length];
+		for(int i=0; i<jarFiles.length; ++i) {
+			urls[i] = jarFiles[i].toURI().toURL();
+		}
+		URLClassLoader cl = new URLClassLoader(urls);
+		return NativeJavaTopPackage.construct(cx, scope, new Object[] { cl });
 	}
 	
 }
