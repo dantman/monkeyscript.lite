@@ -19,7 +19,10 @@ JAKE_FILES = ${JAKE_DIST}/jake.js \
 CLASSPATH = ${BUILD_DIR}:${LIB_DIR}/js.jar:${LIB_DIR}/jline-0.9.94.jar
 JAR = ${DIST_DIR}/lib/monkeyscript.jar
 
-IDSWITCH = java -cp lib/rhino/build/classes/ org.mozilla.javascript.tools.idswitch.Main
+java = `if [ -n "${JAVA_HOME}" ]; then echo ${JAVA_HOME}/bin/java; else echo java; fi`
+javac = `if [ -n "${JAVA_HOME}" ]; then echo ${JAVA_HOME}/bin/javac; else echo javac; fi`
+jar = `if [ -n "${JAVA_HOME}" ]; then echo ${JAVA_HOME}/bin/jar; else echo jar; fi`
+IDSWITCH = ${java} -cp lib/rhino/build/classes/ org.mozilla.javascript.tools.idswitch.Main
 
 .PHONY: all
 all: lite
@@ -79,7 +82,7 @@ ${DIST_DIR}/bin/jake: ${DIST_DIR}/bin
 .PHONY: compile
 compile: ${BUILD_DIR} ${BUILD_DIR}/org/monkeyscript/lite/*.class
 ${BUILD_DIR}/org/monkeyscript/lite/*.class: ${SRC_DIR}/common/org/monkeyscript/lite/*.java
-	javac -cp ${CLASSPATH} -d ${BUILD_DIR} ${SRC_DIR}/common/org/monkeyscript/lite/*.java
+	${javac} -cp ${CLASSPATH} -d ${BUILD_DIR} ${SRC_DIR}/common/org/monkeyscript/lite/*.java
 ## .js inside jar
 .PHONY: jardeps
 jardeps: ${BUILD_DIR} ${BUILD_DIR}/org/monkeyscript/lite/*.class ${BUILD_DIR}/org/monkeyscript/lite/monkeyscript.js ${BUILD_DIR}/org/monkeyscript/lite/monkeyscript.java.js ${BUILD_DIR}/org/monkeyscript/lite/wrench17.js ${BUILD_DIR}/org/monkeyscript/lite/json2.js
@@ -93,7 +96,7 @@ ${BUILD_DIR}/org/monkeyscript/lite/json2.js: ${BUILD_DIR} ${LIB_DIR}/json2.js
 	cp ${LIB_DIR}/json2.js ${BUILD_DIR}/org/monkeyscript/lite
 ## Build the JAR
 ${JAR}: ${DIST_DIR} ${BUILD_DIR} ${BUILD_DIR}/org/monkeyscript/lite/*.class ${BUILD_DIR}/org/monkeyscript/lite/monkeyscript.js ${BUILD_DIR}/org/monkeyscript/lite/monkeyscript.java.js ${BUILD_DIR}/org/monkeyscript/lite/wrench17.js ${BUILD_DIR}/org/monkeyscript/lite/json2.js
-	jar cmf ${SRC_DIR}/common/manifest ${JAR} -C ${BUILD_DIR} org/monkeyscript/lite/
+	${jar} cmf ${SRC_DIR}/common/manifest ${JAR} -C ${BUILD_DIR} org/monkeyscript/lite/
 
 # Cleanup
 .PHONY: clean
@@ -107,7 +110,7 @@ clean:
 # Debug
 .PHONY: debug-compile
 debug-compile: ${BUILD_DIR}
-	javac -Xlint:deprecation -Xlint:unchecked -cp ${CLASSPATH} -d ${BUILD_DIR} ${SRC_DIR}/common/org/monkeyscript/lite/*.java
+	${javac} -Xlint:deprecation -Xlint:unchecked -cp ${CLASSPATH} -d ${BUILD_DIR} ${SRC_DIR}/common/org/monkeyscript/lite/*.java
 
 # Lib build
 .PHONY: wrench
