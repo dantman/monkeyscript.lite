@@ -95,7 +95,7 @@ Stream.prototype.yank = function(len) {
 	do {
 		var max = len - buf.length;
 		var chunk = this.read(max);
-		if ( !chunk )
+		if ( !chunk.length )
 			break; // EOF can't read anymore
 		buf.append(chunk);
 	} while( buf.length < max );
