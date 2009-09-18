@@ -17,6 +17,8 @@ Array.prototype.toJavaArray = function toJavaArray(type) {
 	return jarr;
 };
 
+require.paths = [];
+
 include.once = includeOnce;
 delete global.includeOnce;
 

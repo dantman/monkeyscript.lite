@@ -44,6 +44,7 @@ public class Global extends ImporterTopLevel {
 			"print",
 			"setTimeout",
 			"clearTimeout",
+			"require", // CommonJS
 		};
 		defineFunctionProperties(functions, Global.class, ScriptableObject.DONTENUM);
 		try {
@@ -148,7 +149,8 @@ public class Global extends ImporterTopLevel {
 		return ScriptRuntime.constructError("IOError", message);
 	}
 	
-	public static String js_FILE_(ScriptableObject obj) {
+	public static String js_FILE_(ScriptableObject obj) { return js_FILE_((Scriptable)obj); }
+	public static String js_FILE_(Scriptable obj) {
 		//This is the correct way to do this, but doesn't work because it's protected and can't be proxied
 		//int[] linep = new int[1];
 		//String fileName = Context.getSourcePositionFromStackPublic(linep);
@@ -156,7 +158,8 @@ public class Global extends ImporterTopLevel {
 		return ScriptRuntime.constructError("Error", "").sourceName();
 	}
 	
-	public static String js_DIR_(ScriptableObject obj) {
+	public static String js_DIR_(ScriptableObject obj) { return js_DIR_((Scriptable)obj); }
+	public static String js_DIR_(Scriptable obj) {
 		//This is the correct way to do this, but doesn't work because it's protected and can't be proxied
 		//int[] linep = new int[1];
 		//String fileName = Context.getSourcePositionFromStackPublic(linep);
@@ -164,7 +167,8 @@ public class Global extends ImporterTopLevel {
 		return (new File(ScriptRuntime.constructError("Error", "").sourceName())).getParent();
 	}
 	
-	public static int js_LINE_(ScriptableObject obj) {
+	public static int js_LINE_(ScriptableObject obj) { return js_LINE_((Scriptable)obj); }
+	public static int js_LINE_(Scriptable obj) {
 		//This is the correct way to do this, but doesn't work because it's protected and can't be proxied
 		//int[] linep = new int[1];
 		//String fileName = Context.getSourcePositionFromStackPublic(linep);
@@ -205,6 +209,49 @@ public class Global extends ImporterTopLevel {
 				DelayedFunction dfn = que.take();
 				dfn.call( cx, global, global, new Object[0] );
 			} catch ( InterruptedException e ) {}
+		}
+	}
+	
+	/** CommonJS */
+	public static Object require( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
+		if ( args.length == 0 || !(args[0] instanceof String) )
+			throw ScriptRuntime.typeError("Please pass a module identifier to require()");
+		String identifier = (String)args[0];
+		String[] pieces = identifier.split("/");
+		
+		File scriptFile = null;
+		if ( pieces[0].length() == 0 ) {
+			// Absolute identifier, started with / (non-standard)
+			scriptFile = new File(identifier+".js");
+		} else if ( pieces[0].equals(".") || pieces[0].equals("..") ) {
+			// Relative identifier
+			File base = new File(js_DIR_(thisObj));
+			scriptFile = new File(base, identifier+".js");
+		} else {
+			// Top-level identifier
+			
+		}
+		
+		if ( scriptFile == null || !scriptFile.canRead() ) // ToDo setup LoadError
+			throw ScriptRuntime.constructError("Error", "Could not find CommonJS module from identifier "+identifier);
+		
+		try {
+			Scriptable scope = ScriptableObject.getTopLevelScope(thisObj);
+			FileInputStream is = new FileInputStream(scriptFile);
+			Object exports = cx.newObject(scope);
+			ScriptReader in = new ScriptReader(is, "(function(exports) {", "//*/\n;return exports;\n})");
+			Object moduleReturn = cx.evaluateReader( scope, in, scriptFile.getAbsolutePath(), in.getFirstLine(), null );
+			if (!(moduleReturn instanceof Function))
+				throw ScriptRuntime.constructError("SyntaxError", "Bad module syntax for "+scriptFile.getAbsolutePath());
+			Function fn = (Function)moduleReturn;
+			exports = fn.call(cx, scope, thisObj/*(Scriptable)cx.getUndefinedValue()*/, new Object[] { exports });
+			return exports;
+		} catch( FileNotFoundException e ) {
+			throw ScriptRuntime.constructError("Error", "Could not find CommonJS module from identifier "+identifier);
+		} catch( UnsupportedEncodingException e ) {
+			throw Global.jsIOError("Unsupported character encoding: " + e.getMessage());
+		} catch( IOException e ) {
+			throw Global.jsIOError(e.getMessage());
 		}
 	}
 	
