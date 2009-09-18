@@ -15,4 +15,4 @@
 - Clean up the Buffer classes and either merge them into one or move generic stuff into Buffer itself
 - Consider implementing Copy on Write inside the Buffer classes.
 - Installation (use jake for this... That way make can build releses, and within a release jake can be used to install from the pre-build stuff)
-
+- Java 5 support (start compiling rhino with Java 5 instead of Java 6 at that point)
