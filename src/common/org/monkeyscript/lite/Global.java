@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.DelayQueue;
+import java.util.HashMap;
 
 import java.lang.InterruptedException;
 
@@ -28,6 +29,7 @@ public class Global extends ImporterTopLevel {
 	
 	public void init(Context cx) {
 		cx.putThreadLocal("xMonkeyScriptAsyncQueue", new DelayQueue<DelayedFunction>());
+		cx.putThreadLocal("xMonkeyScriptRequireMap", new HashMap<String,Object>());
 		
 		boolean sealed = cx.isSealed();
 		initStandardObjects( cx, sealed );
@@ -213,6 +215,13 @@ public class Global extends ImporterTopLevel {
 	}
 	
 	/** CommonJS */
+	@SuppressWarnings("unchecked")
+	private static HashMap<String,Object> getRequireMap(Context cx) {
+		Object map = cx.getThreadLocal("xMonkeyScriptRequireMap");
+		if (!(map instanceof HashMap))
+			throw new NullPointerException();
+		return (HashMap<String,Object>)map;
+	}
 	public static Object require( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
 		if ( args.length == 0 || !(args[0] instanceof String) )
 			throw ScriptRuntime.typeError("Please pass a module identifier to require()");
@@ -246,14 +255,19 @@ public class Global extends ImporterTopLevel {
 			throw ScriptRuntime.constructError("Error", "Could not find CommonJS module from identifier "+identifier);
 		
 		try {
+			HashMap<String,Object> map = getRequireMap(cx);
+			Object exports = map.get(scriptFile.getCanonicalPath());
+			if ( exports != null )
+				return exports;
 			FileInputStream is = new FileInputStream(scriptFile);
-			Object exports = cx.newObject(scope);
+			exports = cx.newObject(scope);
 			ScriptReader in = new ScriptReader(is, "(function(exports) {", "//*/\n;return exports;\n})");
 			Object moduleReturn = cx.evaluateReader( scope, in, scriptFile.getAbsolutePath(), in.getFirstLine(), null );
 			if (!(moduleReturn instanceof Function))
 				throw ScriptRuntime.constructError("SyntaxError", "Bad module syntax for "+scriptFile.getAbsolutePath());
 			Function fn = (Function)moduleReturn;
 			exports = fn.call(cx, scope, thisObj/*(Scriptable)cx.getUndefinedValue()*/, new Object[] { exports });
+			map.put(scriptFile.getCanonicalPath(), exports);
 			return exports;
 		} catch( FileNotFoundException e ) {
 			throw ScriptRuntime.constructError("Error", "Could not find CommonJS module from identifier "+identifier);
