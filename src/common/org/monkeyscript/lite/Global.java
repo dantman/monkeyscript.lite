@@ -216,6 +216,7 @@ public class Global extends ImporterTopLevel {
 	public static Object require( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
 		if ( args.length == 0 || !(args[0] instanceof String) )
 			throw ScriptRuntime.typeError("Please pass a module identifier to require()");
+		Scriptable scope = ScriptableObject.getTopLevelScope(thisObj);
 		String identifier = (String)args[0];
 		String[] pieces = identifier.split("/");
 		
@@ -229,14 +230,22 @@ public class Global extends ImporterTopLevel {
 			scriptFile = new File(base, identifier+".js");
 		} else {
 			// Top-level identifier
-			
+			Object[] objs = ScriptRuntime.getArrayElements((Scriptable)funObj.get("paths", scope));
+			for(int i=0; i<objs.length; i++) {
+				String path = ScriptRuntime.toString(objs[i]);
+				File base = new File(path);
+				File f = new File(base, identifier+".js");
+				if ( f.exists() ) {
+					scriptFile = f;
+					break;
+				}
+			}
 		}
 		
 		if ( scriptFile == null || !scriptFile.canRead() ) // ToDo setup LoadError
 			throw ScriptRuntime.constructError("Error", "Could not find CommonJS module from identifier "+identifier);
 		
 		try {
-			Scriptable scope = ScriptableObject.getTopLevelScope(thisObj);
 			FileInputStream is = new FileInputStream(scriptFile);
 			Object exports = cx.newObject(scope);
 			ScriptReader in = new ScriptReader(is, "(function(exports) {", "//*/\n;return exports;\n})");
