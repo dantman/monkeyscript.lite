@@ -1,4 +1,3 @@
-- Buffer (buffer branch)
 - Support optimization (compilation of .js files to .js.class) (optimizer branch)
 - Compile internal .js resources to java .class files on build
 - Support our Encodings spec (encodings headers in files) (includes shebangs)
@@ -8,11 +7,12 @@
 - IO
 - JSGI
 - blob == blob?
-- Rhino 1.7 appears to have a bug in __iterator__ where isKey is true even when for each is used
-  Look at alpha Rhino... If the bug is gone we might consider using it since it has some ES5 stuff
-  If the bug is still there we'll have to consider fixing it ourselves and cloning the rhino repo to build newer versions of js.jar
 - Implement cli.shell.javascript (cli.shell.repl?) banana based on Rhino's shell
 - Support doctest from within MonkeyScript
 - Write Jake task system
 - Bring io to a usable state
 - Migrate Jake to use the working io banana
+- Clean up the Buffer classes and either merge them into one or move generic stuff into Buffer itself
+- Consider implementing Copy on Write inside the Buffer classes.
+- Installation (use jake for this... That way make can build releses, and within a release jake can be used to install from the pre-build stuff)
+
