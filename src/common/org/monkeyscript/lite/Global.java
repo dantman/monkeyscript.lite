@@ -261,13 +261,13 @@ public class Global extends ImporterTopLevel {
 				return exports;
 			FileInputStream is = new FileInputStream(scriptFile);
 			exports = cx.newObject(scope);
-			ScriptReader in = new ScriptReader(is, "(function(exports) {", "//*/\n;return exports;\n})");
+			map.put(scriptFile.getCanonicalPath(), exports);
+			ScriptReader in = new ScriptReader(is, "(function(exports) {", "//*/\n;\n})");
 			Object moduleReturn = cx.evaluateReader( scope, in, scriptFile.getAbsolutePath(), in.getFirstLine(), null );
 			if (!(moduleReturn instanceof Function))
 				throw ScriptRuntime.constructError("SyntaxError", "Bad module syntax for "+scriptFile.getAbsolutePath());
 			Function fn = (Function)moduleReturn;
-			exports = fn.call(cx, scope, thisObj/*(Scriptable)cx.getUndefinedValue()*/, new Object[] { exports });
-			map.put(scriptFile.getCanonicalPath(), exports);
+			fn.call(cx, scope, thisObj/*(Scriptable)cx.getUndefinedValue()*/, new Object[] { exports });
 			return exports;
 		} catch( FileNotFoundException e ) {
 			throw ScriptRuntime.constructError("Error", "Could not find CommonJS module from identifier "+identifier);
