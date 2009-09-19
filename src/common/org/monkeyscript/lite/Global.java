@@ -255,19 +255,25 @@ public class Global extends ImporterTopLevel {
 			throw ScriptRuntime.constructError("Error", "Could not find CommonJS module from identifier "+identifier);
 		
 		try {
+			String absolutePath = scriptFile.getAbsolutePath();
+			String canonicalPath = scriptFile.getCanonicalPath();
+			
 			HashMap<String,Object> map = getRequireMap(cx);
-			Object exports = map.get(scriptFile.getCanonicalPath());
+			Object exports = map.get(canonicalPath);
 			if ( exports != null )
 				return exports;
 			FileInputStream is = new FileInputStream(scriptFile);
 			exports = cx.newObject(scope);
-			map.put(scriptFile.getCanonicalPath(), exports);
-			ScriptReader in = new ScriptReader(is, "(function(exports) {", "//*/\n;\n})");
-			Object moduleReturn = cx.evaluateReader( scope, in, scriptFile.getAbsolutePath(), in.getFirstLine(), null );
+			ScriptableObject module = (ScriptableObject)cx.newObject(scope);
+			module.defineProperty("path", canonicalPath, READONLY|PERMANENT);
+			module.defineProperty("id", identifier, READONLY|PERMANENT); // @todo Expand relative paths to top-level?
+			map.put(canonicalPath, exports);
+			ScriptReader in = new ScriptReader(is, "(function(module, exports) {", "//*/\n;\n})");
+			Object moduleReturn = cx.evaluateReader( scope, in, absolutePath, in.getFirstLine(), null );
 			if (!(moduleReturn instanceof Function))
-				throw ScriptRuntime.constructError("SyntaxError", "Bad module syntax for "+scriptFile.getAbsolutePath());
+				throw ScriptRuntime.constructError("SyntaxError", "Bad module syntax for "+absolutePath);
 			Function fn = (Function)moduleReturn;
-			fn.call(cx, scope, thisObj/*(Scriptable)cx.getUndefinedValue()*/, new Object[] { exports });
+			fn.call(cx, scope, thisObj/*(Scriptable)cx.getUndefinedValue()*/, new Object[] { module, exports });
 			return exports;
 		} catch( FileNotFoundException e ) {
 			throw ScriptRuntime.constructError("Error", "Could not find CommonJS module from identifier "+identifier);
