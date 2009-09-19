@@ -8,3 +8,4 @@ dist/
 /*registry*
 /setenv.sh
 /shell
+!/Jake.js
