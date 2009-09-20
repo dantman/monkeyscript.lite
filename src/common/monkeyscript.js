@@ -7,7 +7,8 @@ var monkeyscript = {
 	version: '0.0.0.0a',
 	hooks: {},
 	rc: [],
-	included: []
+	included: [],
+	platform: ["MonkeyScript", ( Kernel.platform.name === "Rhino" ? " Lite" : "" ), " using engine ", Kernel.platform, " on host ", Kernel.host].join('') 
 };
 
 (function(_native) {
