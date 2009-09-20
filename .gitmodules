@@ -4,3 +4,6 @@
 [submodule "lib/rhino"]
 	path = lib/rhino
 	url = git://github.com/earl/rhino-mirror.git
+[submodule "commonjs-tests"]
+	path = commonjs-tests
+	url = git://github.com/ashb/interoperablejs.git
