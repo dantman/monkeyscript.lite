@@ -29,7 +29,7 @@ public class Global extends ImporterTopLevel {
 	
 	public void init(Context cx) {
 		cx.putThreadLocal("xMonkeyScriptAsyncQueue", new DelayQueue<DelayedFunction>());
-		cx.putThreadLocal("xMonkeyScriptRequireMap", new HashMap<String,Object>());
+		cx.putThreadLocal("xMonkeyScriptRequireMap", new HashMap<String,ScriptableObject>());
 		
 		boolean sealed = cx.isSealed();
 		initStandardObjects( cx, sealed );
@@ -216,11 +216,11 @@ public class Global extends ImporterTopLevel {
 	
 	/** CommonJS */
 	@SuppressWarnings("unchecked")
-	private static HashMap<String,Object> getRequireMap(Context cx) {
+	public static HashMap<String,ScriptableObject> getRequireMap(Context cx) {
 		Object map = cx.getThreadLocal("xMonkeyScriptRequireMap");
 		if (!(map instanceof HashMap))
 			throw new NullPointerException();
-		return (HashMap<String,Object>)map;
+		return (HashMap<String,ScriptableObject>)map;
 	}
 	public static Object require( Context cx, Scriptable thisObj, Object[] args, Function funObj ) {
 		if ( args.length == 0 || !(args[0] instanceof String) )
@@ -258,12 +258,12 @@ public class Global extends ImporterTopLevel {
 			String absolutePath = scriptFile.getAbsolutePath();
 			String canonicalPath = scriptFile.getCanonicalPath();
 			
-			HashMap<String,Object> map = getRequireMap(cx);
-			Object exports = map.get(canonicalPath);
+			HashMap<String,ScriptableObject> map = getRequireMap(cx);
+			ScriptableObject exports = map.get(canonicalPath);
 			if ( exports != null )
 				return exports;
 			FileInputStream is = new FileInputStream(scriptFile);
-			exports = cx.newObject(scope);
+			exports = (ScriptableObject)cx.newObject(scope);
 			ScriptableObject module = (ScriptableObject)cx.newObject(scope);
 			module.defineProperty("path", canonicalPath, READONLY|PERMANENT);
 			module.defineProperty("id", identifier, READONLY|PERMANENT); // @todo Expand relative paths to top-level?
