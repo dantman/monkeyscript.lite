@@ -1,2 +1,2 @@
 #!/bin/bash
-$(dirname -- "$0")/monkeyscript -h banana "$@"
+$(dirname -- "$0")/monkeyscript --hook banana -- "$@"

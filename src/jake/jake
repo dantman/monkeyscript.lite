@@ -1,2 +1,2 @@
 #!/bin/bash
-$(dirname -- "$0")/monkeyscript -h jake "$@"
+$(dirname -- "$0")/monkeyscript --hook jake -- "$@"

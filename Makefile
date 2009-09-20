@@ -64,7 +64,7 @@ dist-dep-banana: $(BANANA_FILES) ${DIST_DIR}/bin/banana
 $(BANANA_FILES): ${BANANA_DIST}/% : ${BANANA_SRC}/% ${BANANA_DIST}
 	@@echo "Copying banana library file ${BANANA_SRC}/$(*F) to ${BANANA_DIST}/"
 	@@cp ${BANANA_SRC}/$(*F) ${BANANA_DIST}/
-${DIST_DIR}/bin/banana: ${DIST_DIR}/bin
+${DIST_DIR}/bin/banana: ${DIST_DIR}/bin ${SRC_DIR}/banana/banana
 	cp ${SRC_DIR}/banana/banana ${DIST_DIR}/bin/
 	-chmod +x ${DIST_DIR}/bin/banana
 ## Jake
@@ -73,7 +73,7 @@ dist-dep-jake: $(JAKE_FILES) ${DIST_DIR}/bin/jake
 $(JAKE_FILES): ${JAKE_DIST}/% : ${JAKE_SRC}/% ${JAKE_DIST}
 	@@echo "Copying jake library file ${JAKE_SRC}/$(*F) to ${JAKE_DIST}/"
 	@@cp ${JAKE_SRC}/$(*F) ${JAKE_DIST}/
-${DIST_DIR}/bin/jake: ${DIST_DIR}/bin
+${DIST_DIR}/bin/jake: ${DIST_DIR}/bin ${SRC_DIR}/jake/jake
 	cp ${SRC_DIR}/jake/jake ${DIST_DIR}/bin/
 	-chmod +x ${DIST_DIR}/bin/jake
 

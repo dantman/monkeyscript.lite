@@ -96,7 +96,8 @@ var monkeyscript = {
 	argsloop: for(var arg;args.length;) {
 		arg = args.shift();
 		if ( arg === "--" ) {
-			monkeyscript.scriptName = args.shift();
+			if ( handleArg.needScript )
+				monkeyscript.scriptName = args.shift();
 			break;
 		} else if ( arg.length > 2 && arg.startsWith("--") ) {
 			handleArg(arg.substr(2));
