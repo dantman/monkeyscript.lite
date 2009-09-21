@@ -3,9 +3,10 @@ Updating lib/wrench17.js
 lib/wrench17.js is used when building MonkeyScript lite.
 The Wrench.js project serves as the majority of MonkeyScript's stdlib.
 
-To update the copy of lib/wrench17.js follow these instructions:
-    > git submodule init      # initialize the lib/wrench submodule
-    > git submodule update    # update/check out the submodule
+To update the copy of lib/wrench17.js the first time run:
+    > git submodule init lib/wrench # initialise the lib/wrench submodule
+    > git submodule update lib/wrench # update/check out the submodule
+Start here if you are updating when you already initialised the submodule
     > cd lib/wrench           # cd into the submodule's directory
     > git pull origin master  # update your copy of the wrench repo
     > cd ../../               # return to the MonkeyScript lite directory
@@ -16,7 +17,42 @@ If you are checking the changes into the git repo as part of a new commit also d
                               # DON'T use a trailing slash, if you do you'll add
                               # the contents instead of updating the submodule
 
+Updating lib/js.jar
+-------------------
+lib/js.jar (rhino) is used when building MonkeyScript lite.
+Rhino project serves as the JavaScript interpreter for MonkeyScript lite.
+
+To update the copy of lib/js.jar the first time run:
+    > git submodule init lib/rhino   # initialise the lib/rhino submodule
+    > git submodule update lib/rhino # update/check out the submodule
+Start here if you are updating when you already initialised the submodule
+    > cd lib/rhino                   # cd into the submodule's directory
+    > git pull origin master         # update your copy of the wrench repo
+    > cd ../../                      # return to the MonkeyScript lite directory
+    > make rhino                     # update lib/wrench17.js using the submodule
+If you are checking the changes into the git repo as part of a new commit also do this:
+    > git add lib/js.jar             # add the new wrench17.js into the index
+    > git add lib/rhino              # Update the commit referenced by the submodule
+                                     # DON'T use a trailing slash, if you do you'll add
+                                     # the contents instead of updating the submodule
+
+Running tests
+-------------
+If you've setup a environment with jake in the rc, binaries ready on the path,
+and the commonjs dir in require.paths you can checkout and run the commonjs tests
+to test for compatibility.
+
+To checkout your copy of the tests run:
+    > git submodule init commonjs-tests
+    > git submodule update commonjs-tests
+To run the tests, within the monkeyscript lit directory run:
+    > jake test.commonjs
+
+The tests will print out a bunch of info, note that a number of extensions tests
+will fail as we may not be implementing some of them, however all compliance tests should pass.
+
 Related
 -------
 Wrench.js: http://wrench.monkeyscript.org
+Rhino: https://developer.mozilla.org/en/Rhino
 
