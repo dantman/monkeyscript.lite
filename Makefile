@@ -15,6 +15,7 @@ JAKE_SRC = ${SRC_DIR}/jake
 JAKE_DIST = ${DIST_DIR}/lib/jake
 JAKE_FILES = ${JAKE_DIST}/jake.js \
 	${JAKE_DIST}/jake.lib.js \
+	${JAKE_DIST}/core-tasks.js
 
 CLASSPATH = ${BUILD_DIR}:${LIB_DIR}/js.jar:${LIB_DIR}/jline-0.9.94.jar
 JAR = ${DIST_DIR}/lib/monkeyscript.jar

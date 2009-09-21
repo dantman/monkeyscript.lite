@@ -97,18 +97,40 @@
 			if ( !newGroups )
 				break;
 		}
+		return Object.values(tasknames);
 	}
 	
 	let tasksRun = {};
 	function runTask(task, force) {
 		var task = task.toLowerCase();
-		var t = tasks[task];
-		if ( !t ) {
-			Kernel.die("No task by the name "+task+" could be found");
+		if( !tasks[task] ) {
+			// Expand groups
+			var run = {}, newGroups;
+			groupexpand: for(;;) {
+				newGroups = false;
+				for each ( var group in Object.keys(groups).sort().reverse() ) {
+					if ( group in run )
+						continue;
+					if ( task.startsWith(group+".") ) {
+						newGroups = true;
+						runGroup(group, false);
+						run[group] = true;
+					}
+					if ( tasks[task] )
+						break groupexpand;
+				}
+				if ( !newGroups )
+					break;
+			}
 		}
+		if ( !tasks[task] ) {
+			// Failure
+			Kernel.die("No task by the name "+task+" could be found. Available tasks: "+alltasks().join(', '));
+		}
+		// Task execution
 		if ( !force && task in tasksRun )
 			return;
-		t.forEach(function(dep) {
+		tasks[task].forEach(function(dep) {
 			if ( isFunction(dep) ) {
 				dep(options);
 			} else if ( isString(dep) ) {
