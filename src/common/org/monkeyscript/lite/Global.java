@@ -35,6 +35,12 @@ import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.DelayQueue;
 import java.util.HashMap;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
+import java.util.jar.Attributes;
+import java.util.*;
+import java.net.URL;
+import java.net.URLClassLoader;
 
 import java.lang.InterruptedException;
 
@@ -255,56 +261,110 @@ public class Global extends ImporterTopLevel {
 		String identifier = (String)args[0];
 		String[] pieces = identifier.split("/");
 		
-		File scriptFile = null;
+		boolean isJar = false;
+		File modFile = null;
 		if ( pieces[0].length() == 0 ) {
 			// Absolute identifier, started with / (non-standard)
-			scriptFile = new File(identifier+".js");
+			modFile = new File(identifier+".jar");
+			isJar = true;
+			if ( !modFile.exists() ) {
+				isJar = false;
+				modFile = new File(identifier+".js");
+			}
 		} else if ( pieces[0].equals(".") || pieces[0].equals("..") ) {
 			// Relative identifier
 			File base = new File(js_DIR_(thisObj));
-			scriptFile = new File(base, identifier+".js");
+			modFile = new File(base, identifier+".jar");
+			isJar = true;
+			if ( !modFile.exists() ) {
+				isJar = false;
+				modFile = new File(base, identifier+".js");
+			}
 		} else {
 			// Top-level identifier
 			Object[] objs = ScriptRuntime.getArrayElements((Scriptable)funObj.get("paths", scope));
 			for(int i=0; i<objs.length; i++) {
 				String path = ScriptRuntime.toString(objs[i]);
 				File base = new File(path);
-				File f = new File(base, identifier+".js");
+				File f = new File(base, identifier+".jar");
 				if ( f.exists() ) {
-					scriptFile = f;
+					isJar = true;
+					modFile = f;
+					break;
+				}
+				f = new File(base, identifier+".js");
+				if ( f.exists() ) {
+					isJar = false;
+					modFile = f;
 					break;
 				}
 			}
 		}
 		
-		if ( scriptFile == null || !scriptFile.canRead() ) // ToDo setup LoadError
+		if ( modFile == null || !modFile.canRead() ) // ToDo setup LoadError
 			throw ScriptRuntime.constructError("Error", "Could not find CommonJS module from identifier "+identifier);
 		
 		try {
-			String absolutePath = scriptFile.getAbsolutePath();
-			String canonicalPath = scriptFile.getCanonicalPath();
+			String absolutePath = modFile.getAbsolutePath();
+			String canonicalPath = modFile.getCanonicalPath();
 			
 			HashMap<String,ScriptableObject> map = getRequireMap(cx);
 			ScriptableObject exports = map.get(canonicalPath);
 			if ( exports != null )
 				return exports;
-			FileInputStream is = new FileInputStream(scriptFile);
+			
 			exports = (ScriptableObject)cx.newObject(scope);
+			map.put(canonicalPath, exports);
+			
 			ScriptableObject module = (ScriptableObject)cx.newObject(scope);
 			module.defineProperty("path", canonicalPath, READONLY|PERMANENT);
 			module.defineProperty("id", identifier, READONLY|PERMANENT); // @todo Expand relative paths to top-level?
-			map.put(canonicalPath, exports);
-			ScriptReader in = new ScriptReader(is, "(function(module, exports) {", "//*/\n;\n})");
-			Object moduleReturn = cx.evaluateReader( scope, in, absolutePath, in.getFirstLine(), null );
-			if (!(moduleReturn instanceof Function))
-				throw ScriptRuntime.constructError("SyntaxError", "Bad module syntax for "+absolutePath);
-			Function fn = (Function)moduleReturn;
-			fn.call(cx, scope, thisObj/*(Scriptable)cx.getUndefinedValue()*/, new Object[] { module, exports });
+			
+			if(isJar) {
+				try {
+				JarFile jarFile = new JarFile(modFile);
+				Manifest manifest = jarFile.getManifest();
+				String exportsClassName = (String)manifest.getMainAttributes().get(new Attributes.Name("X-CommonJS-Exports"));
+				if ( exportsClassName == null )
+					throw ScriptRuntime.constructError("SyntaxError", "Jar based module does not contain a X-CommonJS-Exports manifest line");
+				
+				URLClassLoader classLoader = new URLClassLoader(new URL[] { modFile.toURI().toURL() });
+				Class<?> exporterClass = Class.forName(exportsClassName, true, classLoader);
+				
+				
+				if ( !Exports.class.isAssignableFrom(exporterClass) )
+					throw ScriptRuntime.constructError("SyntaxError", "Jar based module's exporter is not a subclass of Exports");
+				
+				Exports exporter = (Exports)exporterClass.newInstance();
+				
+				exporter.export(cx, scope, module, exports);
+				
+				
+				} catch( ClassNotFoundException e ) {
+					throw ScriptRuntime.constructError("SyntaxError", "Jar based module's exporter could not be found: "+e.getMessage());
+				} catch( InstantiationException e ) {
+					throw ScriptRuntime.constructError("SyntaxError", "Jar based module's exporter could not be instanced");
+				}
+			} else {
+				FileInputStream is = new FileInputStream(modFile);
+				ScriptReader in = new ScriptReader(is, "(function(module, exports) {", "//*/\n;return exports;\n})");
+				Object moduleReturn = cx.evaluateReader( scope, in, absolutePath, in.getFirstLine(), null );
+				if (!(moduleReturn instanceof Function))
+					throw ScriptRuntime.constructError("SyntaxError", "Bad module syntax for "+absolutePath);
+				Function fn = (Function)moduleReturn;
+				Object returnedExports = fn.call(cx, scope, thisObj/*(Scriptable)cx.getUndefinedValue()*/, new Object[] { module, exports });
+				if ( exports != returnedExports )
+					// Warn the programmer they may have done something bad
+					System.err.println("WARNING: CommonJS module "+identifier+" appears to have replaced the exports object which cannot be replaced. This could be a indication of a programming mistake in that module.");
+			}
+			
 			return exports;
 		} catch( FileNotFoundException e ) {
 			throw ScriptRuntime.constructError("Error", "Could not find CommonJS module from identifier "+identifier);
 		} catch( UnsupportedEncodingException e ) {
 			throw Global.jsIOError("Unsupported character encoding: " + e.getMessage());
+		} catch( IllegalAccessException e ) {
+			throw Global.jsIOError(e.getMessage());
 		} catch( IOException e ) {
 			throw Global.jsIOError(e.getMessage());
 		}
