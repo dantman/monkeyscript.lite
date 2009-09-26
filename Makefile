@@ -52,7 +52,7 @@ ${DIST_DIR}/lib/jake:
 # Copy things to dist dir
 .PHONY: dist-deps
 dist-deps: alldirs ${DIST_DIR}/bin/monkeyscript ${DIST_DIR}/lib/js.jar ${DIST_DIR}/lib/jline.jar dist-dep-banana dist-dep-jake
-${DIST_DIR}/bin/monkeyscript: ${DIST_DIR}/bin
+${DIST_DIR}/bin/monkeyscript: ${DIST_DIR}/bin ${SRC_DIR}/common/monkeyscript
 	cp ${SRC_DIR}/common/monkeyscript ${DIST_DIR}/bin/
 	-chmod +x ${DIST_DIR}/bin/monkeyscript
 ${DIST_DIR}/lib/js.jar: ${DIST_DIR}/lib ${LIB_DIR}/js.jar
