@@ -6,9 +6,11 @@ if [ -n "$JAVA_HOME" ]; then
 fi
 
 if [ ! -n "$MONKEYSCRIPT_HOME" ]; then
-	#export MONKEYSCRIPT_HOME=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
-	if [ -d /usr/lib/monkeyscript ]; then
+	SCRIPT_DIR=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
+	if [ -e /usr/lib/monkeyscript/monkeyscript.jar ]; then
 		export MONKEYSCRIPT_HOME=/usr/lib/monkeyscript
+	elif [ -e "$SCRIPT_DIR/../lib/monkeyscript.jar" ]; then
+		export MONKEYSCRIPT_HOME=$(cd -P -- "$SCRIPT_DIR/../lib" && pwd -P)
 	fi
 	if [ ! -n "$MONKEYSCRIPT_HOME" ]; then
 		echo "MONKEYSCRIPT_HOME could not be determined, please set the environment variable"
