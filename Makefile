@@ -89,14 +89,19 @@ ${BOOTSTRAP_DIR}/bin/jake: ${BOOTSTRAP_DIR}/bin ${SRC_DIR}/jake/jake
 
 ## CommonJS modules
 .PHONY: commonjs
-commonjs: ${MODULE_BOOT} $(MODULE_FILES)
+commonjs: ${MODULE_BOOT} $(MODULE_FILES) ${MODULE_BOOT}/io/buffer.jar
 ${MODULE_BOOT}:
 	@@mkdir -p ${MODULE_BOOT}
 $(MODULE_FILES): ${MODULE_BOOT}/% : ${MODULE_SRC}/% ${MODULE_BOOT}
 	@@echo "Copying commonjs module file ${MODULE_SRC}/$(*D)/$(*F) to ${MODULE_BOOT}/"
 	-mkdir -p ${MODULE_BOOT}/$(*D)
 	@@cp ${MODULE_SRC}/$(*D)/$(*F) ${MODULE_BOOT}/$(*D)
-
+${MODULE_BOOT}/io/buffer.jar: ${SRC_DIR}/commonjs/buffer/build/io/buffer.jar
+	-mkdir -p ${MODULE_BOOT}/io/
+	cp ${SRC_DIR}/commonjs/buffer/build/io/buffer.jar ${MODULE_BOOT}/io/
+${SRC_DIR}/commonjs/buffer/build/io/buffer.jar: ${SRC_DIR}/commonjs/buffer/*.java ${SRC_DIR}/commonjs/buffer/Manifest
+	@@echo "Building io/buffer.jar commonjs module using bootstrapped jake"
+	cd ${SRC_DIR}/commonjs/buffer; ${BOOTSTRAP_DIR}/bin/jake
 
 # JAR + Deps
 ## Class files for JAR
