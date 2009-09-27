@@ -188,6 +188,38 @@ public class MonkeyScriptRuntime {
 		return errStream == null ? System.err : errStream;
 	}
 	
+	/**
+	 * Get and set a stdout and stderr print streams for a context
+	 */
+	private static PrintStream genGetContextStream(Context cx, String type, PrintStream defaultStream) {
+		Object ps = cx.getThreadLocal(("xMonkeyScriptStdStream"+type).intern());
+		if(ps != null && ps instanceof PrintStream)
+			return (PrintStream)ps;
+		genSetContextStream(cx, type, defaultStream);
+		return defaultStream;
+	}
+	private static void genSetContextStream(Context cx, String type, PrintStream ps) {
+		cx.putThreadLocal(("xMonkeyScriptStdStream"+type).intern(), ps);
+	}
+	
+	public static PrintStream getContextOut() { return getContextOut(Context.getCurrentContext()); }
+	public static PrintStream getContextOut(Context cx) {
+		return genGetContextStream(cx, "Out", System.out);
+	}
+	public static void setContextOut(PrintStream ps) { setContextOut(Context.getCurrentContext(), ps); }
+	public static void setContextOut(Context cx, PrintStream ps) {
+		genSetContextStream(cx, "Out", ps);
+	}
+	
+	public static PrintStream getContextErr() { return getContextErr(Context.getCurrentContext()); }
+	public static PrintStream getContextErr(Context cx) {
+		return genGetContextStream(cx, "Err", System.err);
+	}
+	public static void setContextErr(PrintStream ps) { setContextOut(Context.getCurrentContext(), ps); }
+	public static void setContextErr(Context cx, PrintStream ps) {
+		genSetContextStream(cx, "Err", ps);
+	}
+	
 	/*public static Object createJarLoader(Context cx, Scriptable scope, File[] jarFiles) {
 		URL[] urls = new URL[jarFiles.length];
 		for(int i=0; i<jarFiles.length; ++i) {

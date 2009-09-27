@@ -93,12 +93,10 @@ public class Global extends ImporterTopLevel {
 	}
 	
 	public static Object print(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
-		PrintStream out = System.out;
+		PrintStream out = MonkeyScriptRuntime.getContextOut();
 		for (int i=0; i < args.length; i++) {
 			// Convert the arbitrary JavaScript value into a string form.
-			String s = Context.toString(args[i]);
-
-			out.print(s);
+			out.print(Context.toString(args[i]));
 		}
 		out.println();
 		return Context.getUndefinedValue();

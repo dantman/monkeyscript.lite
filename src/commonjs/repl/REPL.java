@@ -26,10 +26,15 @@
  */
 package org.monkeyscript.lite.modules.repl;
 
+import java.util.Map;
+import java.util.HashMap;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -47,6 +52,7 @@ public class REPL extends BaseFunction {
 		REPL repl = new REPL();
 		ScriptRuntime.setFunctionProtoAndParent(repl, scope);
 		exports.defineProperty("REPL", repl, 0);
+		repl.defineFunctionProperties(new String[] { "doctest" }, REPL.class, ScriptableObject.DONTENUM);
 	}
 	
 	@Override
@@ -136,6 +142,119 @@ public class REPL extends BaseFunction {
 		oldOptimizationLevel = cx.getOptimizationLevel();
 		
 		return Context.getUndefinedValue();
+	}
+	
+	public static Object doctest(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
+		Scriptable scope = ScriptableObject.getTopLevelScope(thisObj);
+		// Based on org.mozilla.javascript.tools.shell.Global#runDoctest
+		// Credit for doctest goes to authors of toolsrc/org/mozilla/javascript/tools/shell/Global.java#runDoctest
+		String session = Context.toString(args[0]);
+		String codeStartPrompt    = "js> ";
+		String codeContinuePrompt = "  > ";
+		if(args.length > 2) {
+			codeStartPrompt    = Context.toString(args[1]);
+			codeContinuePrompt = Context.toString(args[2]);
+		}
+		
+		HashMap<String,String> doctestCanonicalizations = new HashMap<String,String>();
+		
+		String[] lines = session.split("[\n\r]+");
+		int testCount = 0;
+		int i = 0;
+		while (i < lines.length && !lines[i].trim().startsWith(codeStartPrompt)) {
+			i++; // skip lines that don't look like shell sessions
+		}
+		while (i < lines.length) {
+			String inputString = lines[i].trim().substring(codeStartPrompt.length());
+			inputString += "\n";
+			i++;
+			while (i < lines.length && lines[i].trim().startsWith(codeContinuePrompt)) {
+				inputString += lines[i].trim().substring(codeContinuePrompt.length());
+				inputString += "\n";
+				i++;
+			}
+			String expectedString = "";
+			while (i < lines.length && !lines[i].trim().startsWith(codeStartPrompt)) {
+				expectedString += lines[i] + "\n";
+				i++;
+			}
+			PrintStream savedOut = MonkeyScriptRuntime.getContextOut(cx);
+			PrintStream savedErr = MonkeyScriptRuntime.getContextErr(cx);
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			ByteArrayOutputStream err = new ByteArrayOutputStream();
+			MonkeyScriptRuntime.setContextOut(cx, new PrintStream(out));
+			MonkeyScriptRuntime.setContextErr(cx, new PrintStream(err));
+			String resultString = "";
+			ErrorReporter savedErrorReporter = cx.getErrorReporter();
+			cx.setErrorReporter(new ToolErrorReporter(false, MonkeyScriptRuntime.getContextErr(cx)));
+			try {
+				testCount++;
+				Object result = cx.evaluateString(scope, inputString, "doctest input", 1, null);
+				if (result != Context.getUndefinedValue() && !(result instanceof Function && inputString.trim().startsWith("function"))) {
+					resultString = Context.toString(result);
+				}
+			} catch (RhinoException e) {
+				ToolErrorReporter.reportException(cx.getErrorReporter(), e);
+			} finally {
+				MonkeyScriptRuntime.setContextOut(cx, savedOut);
+				MonkeyScriptRuntime.setContextErr(cx, savedErr);
+				cx.setErrorReporter(savedErrorReporter);
+				resultString += err.toString() + out.toString();
+			}
+			if (!doctestOutputMatches(doctestCanonicalizations, expectedString, resultString)) {
+				String message = "doctest failure running:\n" +
+					inputString +
+					"expected: " + expectedString +
+					"actual: " + resultString + "\n";
+				System.err.println(message);
+			}
+		}
+		return testCount;
+	}
+	
+	private static boolean doctestOutputMatches(HashMap<String,String> doctestCanonicalizations, String expected, String actual) {
+		// Ported from org.mozilla.javascript.tools.shell.Global#doctestOutputMatches
+		// Credit for doctest goes to authors of toolsrc/org/mozilla/javascript/tools/shell/Global.java#runDoctest
+		expected = expected.trim();
+		actual = actual.trim().replace("\r\n", "\n");
+		if (expected.equals(actual))
+			return true;
+		for (Map.Entry<String,String> entry: doctestCanonicalizations.entrySet()) {
+			expected = expected.replace(entry.getKey(), entry.getValue());
+		}
+		if (expected.equals(actual))
+			return true;
+		// java.lang.Object.toString() prints out a unique hex number associated
+		// with each object. This number changes from run to run, so we want to
+		// ignore differences between these numbers in the output. We search for a
+		// regexp that matches the hex number preceded by '@', then enter mappings into
+		// "doctestCanonicalizations" so that we ensure that the mappings are
+		// consistent within a session.
+		Pattern p = Pattern.compile("@[0-9a-fA-F]+");
+		Matcher expectedMatcher = p.matcher(expected);
+		Matcher actualMatcher = p.matcher(actual);
+		for (;;) {
+			if (!expectedMatcher.find())
+				return false;
+			if (!actualMatcher.find())
+				return false;
+			if (actualMatcher.start() != expectedMatcher.start())
+				return false;
+			int start = expectedMatcher.start();
+			if (!expected.substring(0, start).equals(actual.substring(0, start)))
+				return false;
+			String expectedGroup = expectedMatcher.group();
+			String actualGroup = actualMatcher.group();
+			String mapping = doctestCanonicalizations.get(expectedGroup);
+			if (mapping == null) {
+				doctestCanonicalizations.put(expectedGroup, actualGroup);
+				expected = expected.replace(expectedGroup, actualGroup);
+			} else if (!actualGroup.equals(mapping)) {
+				return false; // wrong object!
+			}
+			if (expected.equals(actual))
+				return true;
+		}
 	}
 	
 }
