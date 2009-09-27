@@ -72,7 +72,7 @@ var monkeyscript = {
 		case 'interactive':
 		case 'repl':
 			// Run a hook
-			monkeyscript.hookName = "interactive";
+			monkeyscript.hookName = "repl";
 			handleArg.needScript = false;
 			break;
 		case 'h':

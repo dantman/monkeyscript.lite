@@ -1,7 +1,8 @@
-SRC_DIR = src
-LIB_DIR = lib
-BUILD_DIR = build
-BOOTSTRAP_DIR = bootstrap
+ROOT = ${PWD}
+SRC_DIR = ${ROOT}/src
+LIB_DIR = ${ROOT}/lib
+BUILD_DIR = ${ROOT}/build
+BOOTSTRAP_DIR = ${ROOT}/bootstrap
 
 BANANA_SRC = ${SRC_DIR}/banana
 BANANA_BOOT = ${BOOTSTRAP_DIR}/lib/banana
@@ -21,7 +22,8 @@ MODULE_SRC = ${SRC_DIR}/commonjs/modules
 MODULE_BOOT = ${BOOTSTRAP_DIR}/lib/modules
 MODULE_FILES = \
 	${MODULE_BOOT}/system.js \
-	${MODULE_BOOT}/io/filesystem/raw.js
+	${MODULE_BOOT}/io/filesystem/raw.js \
+	${MODULE_BOOT}/io/process/function.js
 
 #	${MODULE_BOOT}/io/stream.js \
 #	${MODULE_BOOT}/io/filesystem.js \
@@ -60,7 +62,7 @@ ${BOOTSTRAP_DIR}/lib/jake:
 
 # Copy things to dist dir
 .PHONY: bootstrap-deps
-bootstrap-deps: alldirs ${BOOTSTRAP_DIR}/bin/monkeyscript ${BOOTSTRAP_DIR}/lib/js.jar ${BOOTSTRAP_DIR}/lib/jline.jar dist-dep-banana dist-dep-jake
+bootstrap-deps: alldirs ${BOOTSTRAP_DIR}/bin/monkeyscript ${BOOTSTRAP_DIR}/lib/js.jar ${BOOTSTRAP_DIR}/lib/jline.jar dist-dep-banana dist-dep-jake ${BOOTSTRAP_DIR}/lib/monkeyscriptrc.js ${BOOTSTRAP_DIR}/lib/repl.js
 ${BOOTSTRAP_DIR}/bin/monkeyscript: ${BOOTSTRAP_DIR}/bin ${SRC_DIR}/common/monkeyscript
 	cp ${SRC_DIR}/common/monkeyscript ${BOOTSTRAP_DIR}/bin/
 	-chmod +x ${BOOTSTRAP_DIR}/bin/monkeyscript
@@ -68,6 +70,10 @@ ${BOOTSTRAP_DIR}/lib/js.jar: ${BOOTSTRAP_DIR}/lib ${LIB_DIR}/js.jar
 	cp ${LIB_DIR}/js.jar ${BOOTSTRAP_DIR}/lib/
 ${BOOTSTRAP_DIR}/lib/jline.jar: ${BOOTSTRAP_DIR}/lib ${LIB_DIR}/jline-0.9.94.jar
 	cp ${LIB_DIR}/jline-0.9.94.jar ${BOOTSTRAP_DIR}/lib/jline.jar
+${BOOTSTRAP_DIR}/lib/monkeyscriptrc.js: ${SRC_DIR}/common/monkeyscriptrc.js
+	cp ${SRC_DIR}/common/monkeyscriptrc.js ${BOOTSTRAP_DIR}/lib/
+${BOOTSTRAP_DIR}/lib/repl.js: ${SRC_DIR}/common/repl.js
+	cp ${SRC_DIR}/common/repl.js ${BOOTSTRAP_DIR}/lib/
 ## Banana
 .PHONY: dist-dep-banana
 dist-dep-banana: $(BANANA_FILES) ${BOOTSTRAP_DIR}/bin/banana
@@ -89,7 +95,7 @@ ${BOOTSTRAP_DIR}/bin/jake: ${BOOTSTRAP_DIR}/bin ${SRC_DIR}/jake/jake
 
 ## CommonJS modules
 .PHONY: commonjs
-commonjs: ${MODULE_BOOT} $(MODULE_FILES) ${MODULE_BOOT}/io/buffer.jar
+commonjs: ${MODULE_BOOT} $(MODULE_FILES) ${MODULE_BOOT}/io/buffer.jar ${MODULE_BOOT}/repl.jar
 ${MODULE_BOOT}:
 	@@mkdir -p ${MODULE_BOOT}
 $(MODULE_FILES): ${MODULE_BOOT}/% : ${MODULE_SRC}/% ${MODULE_BOOT}
@@ -102,6 +108,12 @@ ${MODULE_BOOT}/io/buffer.jar: ${SRC_DIR}/commonjs/buffer/build/io/buffer.jar
 ${SRC_DIR}/commonjs/buffer/build/io/buffer.jar: ${SRC_DIR}/commonjs/buffer/*.java ${SRC_DIR}/commonjs/buffer/Manifest
 	@@echo "Building io/buffer.jar commonjs module using bootstrapped jake"
 	cd ${SRC_DIR}/commonjs/buffer; ${BOOTSTRAP_DIR}/bin/jake
+${MODULE_BOOT}/repl.jar: ${SRC_DIR}/commonjs/buffer/build/repl.jar
+	-mkdir -p ${MODULE_BOOT}/
+	cp ${SRC_DIR}/commonjs/repl/build/repl.jar ${MODULE_BOOT}/
+${SRC_DIR}/commonjs/buffer/build/repl.jar: ${SRC_DIR}/commonjs/repl/*.java ${SRC_DIR}/commonjs/repl/Manifest
+	@@echo "Building repl.jar commonjs module using bootstrapped jake"
+	cd ${SRC_DIR}/commonjs/repl; ${BOOTSTRAP_DIR}/bin/jake
 
 # JAR + Deps
 ## Class files for JAR

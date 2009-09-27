@@ -26,10 +26,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-function Process() {
-	
-}
-
 function ProcessFunction(executable) {
 	// @todo Develop lang.javascript.xobject and use that to have full control over instanceof, etc...
 	function exe() {
@@ -88,6 +84,5 @@ function ProcessFunction(executable) {
 	return exe;
 }
 
-exports.Process = Process;
 exports.ProcessFunction = ProcessFunction;
 

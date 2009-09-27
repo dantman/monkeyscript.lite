@@ -43,6 +43,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 import java.lang.InterruptedException;
+import java.lang.reflect.InvocationTargetException;
 
 import org.mozilla.javascript.*;
 
@@ -322,28 +323,31 @@ public class Global extends ImporterTopLevel {
 			
 			if(isJar) {
 				try {
-				JarFile jarFile = new JarFile(modFile);
-				Manifest manifest = jarFile.getManifest();
-				String exportsClassName = (String)manifest.getMainAttributes().get(new Attributes.Name("X-CommonJS-Exports"));
-				if ( exportsClassName == null )
-					throw ScriptRuntime.constructError("SyntaxError", "Jar based module does not contain a X-CommonJS-Exports manifest line");
-				
-				URLClassLoader classLoader = new URLClassLoader(new URL[] { modFile.toURI().toURL() });
-				Class<?> exporterClass = Class.forName(exportsClassName, true, classLoader);
-				
-				
-				if ( !Exports.class.isAssignableFrom(exporterClass) )
-					throw ScriptRuntime.constructError("SyntaxError", "Jar based module's exporter is not a subclass of Exports");
-				
-				Exports exporter = (Exports)exporterClass.newInstance();
-				
-				exporter.export(cx, scope, module, exports);
-				
-				
+					JarFile jarFile = new JarFile(modFile);
+					Manifest manifest = jarFile.getManifest();
+					String exportsClassName = (String)manifest.getMainAttributes().get(new Attributes.Name("X-CommonJS-Exports"));
+					if ( exportsClassName == null )
+						throw ScriptRuntime.constructError("SyntaxError", "Jar based module does not contain a X-CommonJS-Exports manifest line");
+					
+					URLClassLoader classLoader = new URLClassLoader(new URL[] { modFile.toURI().toURL() });
+					Class<?> exporterClass = Class.forName(exportsClassName, true, classLoader);
+					
+					
+					if ( !Exports.class.isAssignableFrom(exporterClass) )
+						throw ScriptRuntime.constructError("SyntaxError", "Jar based module's exporter is not a subclass of Exports");
+					
+					Exports exporter = (Exports)exporterClass.newInstance();
+					
+					exporter.export(cx, scope, module, exports);
+					
 				} catch( ClassNotFoundException e ) {
 					throw ScriptRuntime.constructError("SyntaxError", "Jar based module's exporter could not be found: "+e.getMessage());
 				} catch( InstantiationException e ) {
 					throw ScriptRuntime.constructError("SyntaxError", "Jar based module's exporter could not be instanced");
+				} catch( IllegalAccessException e ) {
+					throw ScriptRuntime.constructError("Error", "Jar based module's exporter caused an illegal access exception");
+				} catch( InvocationTargetException e ) {
+					throw ScriptRuntime.constructError("Error", "Attempting to export Jar based module's caused an InvocationTargetException");
 				}
 			} else {
 				FileInputStream is = new FileInputStream(modFile);
@@ -363,9 +367,9 @@ public class Global extends ImporterTopLevel {
 			throw ScriptRuntime.constructError("Error", "Could not find CommonJS module from identifier "+identifier);
 		} catch( UnsupportedEncodingException e ) {
 			throw Global.jsIOError("Unsupported character encoding: " + e.getMessage());
-		} catch( IllegalAccessException e ) {
+		}/* catch( IllegalAccessException e ) {
 			throw Global.jsIOError(e.getMessage());
-		} catch( IOException e ) {
+		}*/ catch( IOException e ) {
 			throw Global.jsIOError(e.getMessage());
 		}
 	}

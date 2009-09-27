@@ -24,13 +24,16 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.monkeyscript.lite;
+package org.monkeyscript.lite.modules.repl;
+import org.monkeyscript.lite.*;
 import org.mozilla.javascript.*;
 import java.lang.reflect.InvocationTargetException;
 
-abstract public class Exports {
+public class Exports extends org.monkeyscript.lite.Exports {
 	
-	abstract public void export( Context cx, Scriptable scope, ScriptableObject module, ScriptableObject exports )
-		throws IllegalAccessException, InstantiationException, InvocationTargetException;
+	public void export( Context cx, Scriptable scope, ScriptableObject module, ScriptableObject exports )
+			throws IllegalAccessException, InstantiationException, InvocationTargetException {
+		REPL.export( cx, scope, module, exports );
+	}
 	
 }

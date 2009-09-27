@@ -32,6 +32,7 @@ import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.UndeclaredThrowableException;
 
 import org.mozilla.javascript.*;
 
@@ -56,12 +57,16 @@ public class MonkeyScript {
 			Scriptable argsObj = cx.newArray(global, array);
 			global.defineProperty("_arguments", argsObj, ScriptableObject.DONTENUM);
 			
-			quickRunScript( cx, global, "json2.js" );
-			quickRunScript( cx, global, "wrench17.js" );
-			quickRunScript( cx, global, "monkeyscript.java.js" );
 			try {
+				quickRunScript( cx, global, "json2.js" );
+				quickRunScript( cx, global, "wrench17.js" );
+				quickRunScript( cx, global, "monkeyscript.java.js" );
 				quickRunScript( cx, global, "monkeyscript.js" );
 				Global.runQueue( cx, global );
+			} catch ( IOException e ) {
+				throw new UndeclaredThrowableException(e);
+			} catch ( NullPointerException e ) {
+				throw new UndeclaredThrowableException(e);
 			} catch ( JavaScriptException e ) {
 				StringBuffer buf = new StringBuffer();
 				buf.append("Error in main thread");
@@ -92,15 +97,11 @@ public class MonkeyScript {
 		
 	}
 	
-	protected static Object quickRunScript( Context cx, ScriptableObject scope, String fileName ) {
-		try {
-			InputStream is = MonkeyScript.class.getResourceAsStream( fileName );
-			InputStreamReader in = new InputStreamReader(is, "UTF-8");
-			return cx.evaluateReader( scope, in, fileName, 1, null );
-		}
-		catch( IOException e ) { reportWarning("Failed to exec script "+fileName, e); }
-		catch( NullPointerException e ) { reportWarning("Failed to exec script "+fileName, e); }
-		return null;
+	protected static Object quickRunScript( Context cx, ScriptableObject scope, String fileName )
+			throws IOException, NullPointerException {
+		InputStream is = MonkeyScript.class.getResourceAsStream( fileName );
+		InputStreamReader in = new InputStreamReader(is, "UTF-8");
+		return cx.evaluateReader( scope, in, fileName, 1, null );
 	}
 	
 	protected static void reportWarning(String message) {
