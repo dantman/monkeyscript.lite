@@ -43,6 +43,7 @@ var monkeyscript = {
 	
 	// RC Scripts
 	monkeyscript.rc.push(
+		Kernel.monkeyscriptHome + Kernel.os.fileSeparator + 'monkeyscriptrc.js',
 		Kernel.configDir + Kernel.os.fileSeparator + 'monkeyscriptrc.js',
 		Kernel.configDir + Kernel.os.fileSeparator + 'monkeyscriptrc'
 	);
