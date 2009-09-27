@@ -1,0 +1,28 @@
+diff --git a/src/org/mozilla/javascript/IdScriptableObject.java b/src/org/mozilla/javascript/IdScriptableObject.java
+index 4a6f2d8..8f0a213 100644
+--- a/src/org/mozilla/javascript/IdScriptableObject.java
++++ b/src/org/mozilla/javascript/IdScriptableObject.java
+@@ -597,7 +597,7 @@ public abstract class IdScriptableObject extends ScriptableObject
+         throw f.unknown();
+     }
+ 
+-    public final IdFunctionObject exportAsJSClass(int maxPrototypeId,
++    public final IdFunctionObject createConstructor(int maxPrototypeId,
+                                                   Scriptable scope,
+                                                   boolean sealed)
+     {
+@@ -616,6 +616,14 @@ public abstract class IdScriptableObject extends ScriptableObject
+         if (sealed) {
+             ctor.sealObject();
+         }
++        return ctor;
++    }
++
++    public final IdFunctionObject exportAsJSClass(int maxPrototypeId,
++                                                  Scriptable scope,
++                                                  boolean sealed)
++    {
++        IdFunctionObject ctor = createConstructor(maxPrototypeId, scope, sealed);
+         ctor.exportAsScopeProperty();
+         return ctor;
+     }
