@@ -90,7 +90,7 @@ public class REPL extends BaseFunction {
 		String codeStartPrompt    = "js> ";
 		String codeContinuePrompt = "  > ";
 		
-		int lineno = 1;
+		int lineno = 0;
 		boolean hitEOF = false;
 		while (!hitEOF) {
 			ps.print(codeStartPrompt);
@@ -114,34 +114,47 @@ public class REPL extends BaseFunction {
 					break;
 				ps.print(codeContinuePrompt);
 			}
-			Script script = cx.compileString(source, "<stdin>", lineno, null);
-			if (script != null) {
-				try {
-					Object result = script.exec(cx, scope); // @todo should we grab the top level scope?
-					// Avoid printing out undefined or function definitions.
-					if (result != Context.getUndefinedValue() && !(result instanceof Function && source.trim().startsWith("function"))) {
-						try { ps.println(Context.toString(result));
-						} catch (RhinoException rex) {
-							ToolErrorReporter.reportException(cx.getErrorReporter(), rex);
+			try {
+				Script script = cx.compileString(source, "<stdin>", lineno, null);
+				if (script != null) {
+					try {
+						Object result = script.exec(cx, scope); // @todo should we grab the top level scope?
+						// Avoid printing out undefined or function definitions.
+						if (result != Context.getUndefinedValue() && !(result instanceof Function && source.trim().startsWith("function"))) {
+							try { ps.println(Context.toString(result));
+							} catch (RhinoException rex) {
+								shellPrintError(cx, scope, rex);
+							}
 						}
+						history.put((int)history.getLength(), history, source);
+					} catch (RhinoException rex) {
+						shellPrintError(cx, scope, rex);
+					} catch (VirtualMachineError ex) {
+						// Treat StackOverflow and OutOfMemory as runtime errors
+						ex.printStackTrace();
+						String msg = ToolErrorReporter.getMessage("msg.uncaughtJSException", ex.toString());
+						Context.reportError(msg);
 					}
-					history.put((int)history.getLength(), history, source);
-				} catch (RhinoException rex) {
-					ToolErrorReporter.reportException(cx.getErrorReporter(), rex);
-				} catch (VirtualMachineError ex) {
-					// Treat StackOverflow and OutOfMemory as runtime errors
-					ex.printStackTrace();
-					String msg = ToolErrorReporter.getMessage("msg.uncaughtJSException", ex.toString());
-					Context.reportError(msg);
 				}
+			} catch (RhinoException rex) {
+				shellPrintError(cx, scope, rex);
 			}
 		}
 		ps.println();
 		
 		// Reset optimization level
-		oldOptimizationLevel = cx.getOptimizationLevel();
+		cx.setOptimizationLevel(oldOptimizationLevel);
 		
 		return Context.getUndefinedValue();
+	}
+	
+	private static void shellPrintError(Context cx, Scriptable scope, RhinoException rex) {
+		MonkeyErrorPrinter.shellPrint(cx, ScriptableObject.getTopLevelScope(scope), rex,
+			new StackTraceElementFilter() {
+				public boolean accept(StackTraceElement e) {
+					return !e.getClassName().equals("org.monkeyscript.lite.modules.repl.REPL");
+				}
+			});
 	}
 	
 	public static Object doctest(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
