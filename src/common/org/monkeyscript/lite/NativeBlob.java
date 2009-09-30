@@ -57,6 +57,11 @@ final class NativeBlob extends IdScriptableObject {
 		bytes = b;
 	}
 	
+	private NativeBlob(byte[] b, int off, int len) {
+		bytes = new byte[len];
+		System.arraycopy(b, off, bytes, 0, len);
+	}
+	
 	@Override
 	public String getClassName() {
 		return "Blob";
@@ -126,11 +131,13 @@ final class NativeBlob extends IdScriptableObject {
 			case Id_valueOf:           arity=0; s="valueOf";           break;
 			case Id_byteAt:            arity=1; s="byteAt";            break;
 			case Id_valueAt:           arity=1; s="valueAt";           break;
+			case Id_byteCodeAt:        arity=1; s="byteCodeAt";        break;
+			case Id_codeAt:            arity=1; s="codeAt";            break;
 			case Id_indexOf:           arity=1; s="indexOf";           break;
 			case Id_lastIndexOf:       arity=1; s="lastIndexOf";       break;
+			case Id_concat:            arity=1; s="concat";            break;
 			case Id_split:             arity=2; s="split";             break;
 			case Id_slice:             arity=2; s="slice";             break;
-			case Id_concat:            arity=1; s="concat";            break;
 			case Id_equals:            arity=1; s="equals";            break;
 			default: throw new IllegalArgumentException(String.valueOf(id));
 		}
@@ -343,7 +350,11 @@ final class NativeBlob extends IdScriptableObject {
 	
 	private static Object jsConstructor(Context cx, Scriptable scope, Object[] args) {
 		if ( args.length > 0 ) {
-			return new NativeBlob(MonkeyScriptRuntime.toByteArray(args[0]));
+			if ( args[0].getClass() == byte[].class && args.length > 2 ) {
+				return new NativeBlob((byte[])args[0], ScriptRuntime.toInt32(args[1]), ScriptRuntime.toInt32(args[2]));
+			} else {
+				return new NativeBlob(MonkeyScriptRuntime.toByteArray(args[0]));
+			}
 		} else {
 			return NativeBlob.newEmpty();
 		}

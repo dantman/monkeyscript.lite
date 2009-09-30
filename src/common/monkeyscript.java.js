@@ -27,9 +27,9 @@
  */
 
 /** MonkeyScript Lite specific helper. Allow _native code to easily convert arrays to java arrays */
-Array.prototype.toJavaArray = function toJavaArray(type) {
-	var jarr = java.lang.reflect.Array.newInstance(type, this.length);
-	for(let i=0; i<this.length; i++) {
+Array.prototype.toJavaArray = function toJavaArray(type, len) {
+	var jarr = java.lang.reflect.Array.newInstance(type, len || this.length);
+	for(let i=0; i<jarr.length; i++) {
 		let item = this[i];
 		if ( item instanceof type )
 			jarr[i] = item;
