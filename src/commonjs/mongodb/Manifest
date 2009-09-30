@@ -1,0 +1,4 @@
+Implementation-Vendor: Daniel Friesen
+X-CommonJS-Exports: org.monkeyscript.lite.modules.mongodb.Exports
+Class-Path: ./mongo-0.10.1.jar
+
