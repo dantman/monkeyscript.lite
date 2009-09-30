@@ -134,6 +134,81 @@ exports.listLeafsByStat = function listLeafsByLeaf(leaf, leafCallback) {
 
 exports.open = function open(leaf, flags) {
 	// @todo
+	var level0 = {
+		contentConstructor: flags.encoding ? String : Blob
+	};
+	
+	var mode = [];
+	if(flags.read) mode.push("r");
+	if(flags.write) mode.push("w");
+	if(!mode.length)
+		throw new TypeError(".open called with neither a read or a write flag");
+	if(mode.sync) mode.push("s");
+	mode = mode.join('');
+	
+	if ( flags.write && flags.create && !leaf.exists() )
+		throw new Error("File does not exist");
+	
+	var raf = new java.io.RandomAccessFile(leaf, mode);
+	var channel = raf.getChannel();
+	if(mode.write && mode.truncate)
+		channel.truncate(0);
+	
+	level0.close = function() {
+		raf.close();
+	};
+	
+	/*var charset;
+	if(flags.encoding) {
+		try {
+			charset = java.nio.charset.Charset.forName(flags.encoding);
+		} catch( e ) {
+			throw new Error("Charset ");
+		}
+		
+	}*/
+	
+	level0.tell = function tell() {
+		return raf.getFilePointer();
+	};
+	level0.seek = function seek(pos) {
+		raf.seek(pos);
+		return pos;
+	};
+	
+	if ( flags.read ) {
+		level0.readChunk = function readChunk(max) {
+			if ( max == Infinity )
+				max == 512;
+			var bbuf = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, max);
+			var rlen = raf.read(bbuf, 0, max);
+			if ( rlen == -1 )
+				return Blob();
+			return Blob(bbuf, 0, rlen); // MonkeyScript Lite extension
+		};
+		level0.skip = function skip(max) {
+			if ( max == Infinity )
+				max == 512;
+			return raf.skipBytes(max);
+		};
+	}
+	if ( flags.write ) {
+		level0.write = function(data, off, len) {
+			if ( flags.append ) {
+				var oldPos = raf.getFilePointer();
+				raf.seek(raf.length());
+			}
+			var bbuf = raf.toJavaByteArray(); // MonkeyScript Lite extension
+			raf.write(bbuf, off, len);
+			if ( flags.append )
+				raf.seek(oldPos);
+		};
+		level0.flush = function() {
+			raf.getChannel().force(true);
+		};
+	}
+	
+	return level0;
 };
 
 exports.remove = function remove(leaf) {

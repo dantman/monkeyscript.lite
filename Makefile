@@ -22,8 +22,8 @@ MODULE_SRC = ${SRC_DIR}/commonjs/modules
 MODULE_BOOT = ${BOOTSTRAP_DIR}/lib/modules
 MODULE_FILES = \
 	${MODULE_BOOT}/system.js \
-	${MODULE_BOOT}/io/filesystem/raw.js \
-	${MODULE_BOOT}/io/process/function.js
+	${MODULE_BOOT}/io/filesystem/raw.java.js \
+	${MODULE_BOOT}/io/process/function.java.js
 
 #	${MODULE_BOOT}/io/stream.js \
 #	${MODULE_BOOT}/io/filesystem.js \

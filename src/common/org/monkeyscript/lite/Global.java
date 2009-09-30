@@ -268,7 +268,10 @@ public class Global extends ImporterTopLevel {
 			isJar = true;
 			if ( !modFile.exists() ) {
 				isJar = false;
-				modFile = new File(identifier+".js");
+				modFile = new File(identifier+".java.js");
+				if ( !modFile.exists() ) {
+					modFile = new File(identifier+".js");
+				}
 			}
 		} else if ( pieces[0].equals(".") || pieces[0].equals("..") ) {
 			// Relative identifier
@@ -277,7 +280,10 @@ public class Global extends ImporterTopLevel {
 			isJar = true;
 			if ( !modFile.exists() ) {
 				isJar = false;
-				modFile = new File(base, identifier+".js");
+				modFile = new File(base, identifier+".java.js");
+				if ( !modFile.exists() ) {
+					modFile = new File(base, identifier+".js");
+				}
 			}
 		} else {
 			// Top-level identifier
@@ -288,6 +294,12 @@ public class Global extends ImporterTopLevel {
 				File f = new File(base, identifier+".jar");
 				if ( f.exists() ) {
 					isJar = true;
+					modFile = f;
+					break;
+				}
+				f = new File(base, identifier+".java.js");
+				if ( f.exists() ) {
+					isJar = false;
 					modFile = f;
 					break;
 				}
