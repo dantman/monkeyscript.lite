@@ -1,0 +1,31 @@
+js> var b = Blob([255]);
+js> b.contentConstructor === Blob;
+true
+js> b.length;
+1
+js> b.byteCodeAt(0);
+255
+js> b.codeAt(0);
+255
+js> b.concat([255,234]).toSource();
+(new Blob([255, 255, 234]))
+js> // slice needs a test
+js> Blob([1,2,3,4,5,6,7]).indexOf([3,4,5]);
+2
+js> b.byteAt(0).toSource();
+(new Blob([255]))
+js> b.valueAt(0).toSource();
+(new Blob([255]))
+js> Blob([0,0,0,255,0,0]).split([0,255]).toSource();
+[(new Blob([0,0])),(new Blob([0,0]))]
+js> // toBlob needs a test
+js> // toString(fromCharset) needs a test
+js> // toArray() needs a test
+js> // toArray(fromCharset) needs a test
+js> "".contentConstructor === String
+true
+js> // toBlob(toCharset) needs a test
+js> // valueAt(index) needs a test
+js> // codeAt(index) needs a test
+js> // String.fromCode(code) needs a test
+
