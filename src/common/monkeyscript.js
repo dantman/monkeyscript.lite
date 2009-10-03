@@ -65,7 +65,8 @@ var monkeyscript = {
 		case 'l':
 		case 'lint':
 			// Lint a file
-			Kernel.die("MonkeyScript lint support has not been implemented yet");
+			monkeyscript.hookName = "lint";
+			handleArg.needScript = false;
 			break;
 		case 'i':
 		case 'a': // php uses -a sortof abnormally, support it for the hell of it
