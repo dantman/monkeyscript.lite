@@ -1,3 +1,14 @@
+Setup and Installation
+----------------------
+If you checked out MonkeyScript from source instead of a release you'll need to
+first setup the MonkeyScript Lite bootstrap.
+
+To do this you'll need the Java 6 SDK installed on your system, as well as GNU Make.
+Run `make bootstrap` to setup the bootstrap.
+
+
+
+
 Updating lib/wrench17.js
 ------------------------
 lib/wrench17.js is used when building MonkeyScript lite.
@@ -21,6 +32,7 @@ Updating lib/js.jar
 -------------------
 lib/js.jar (rhino) is used when building MonkeyScript lite.
 Rhino project serves as the JavaScript interpreter for MonkeyScript lite.
+Note that you'll need Apache Ant in addition to the Java SDK to build rhino.
 
 To update the copy of lib/js.jar the first time run:
     > git submodule init lib/rhino   # initialise the lib/rhino submodule

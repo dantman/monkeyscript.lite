@@ -20,15 +20,6 @@ JAKE_FILES = ${JAKE_BOOT}/jake.js \
 
 MODULE_SRC = ${SRC_DIR}/commonjs/modules
 MODULE_BOOT = ${BOOTSTRAP_DIR}/lib/modules
-MODULE_FILES = \
-	${MODULE_BOOT}/io/filesystem/raw.java.js \
-	${MODULE_BOOT}/io/process/function.java.js \
-	${MODULE_BOOT}/encodings.java.js \
-	${MODULE_BOOT}/system.js \
-	${MODULE_BOOT}/lint.java.js
-
-#	${MODULE_BOOT}/io/stream.js \
-#	${MODULE_BOOT}/io/filesystem.js \
 
 CLASSPATH = ${BUILD_DIR}:${LIB_DIR}/js.jar:${LIB_DIR}/jline-0.9.94.jar
 JAR = ${BOOTSTRAP_DIR}/lib/monkeyscript.jar
@@ -47,6 +38,10 @@ lite: bootstrap
 bootstrap: bootstrap-deps ${JAR} commonjs
 	@@echo "MonkeyScript Lite Bootstrapped"
 	@@echo
+.PHONY: jake-bootstrap
+jake-bootstrap:
+	# @todo Move all this stuff into `jake bootstrap`
+	bootstrap/bin/jake bootstrap
 
 # Dirs
 .PHONY: alldirs
@@ -64,7 +59,7 @@ ${BOOTSTRAP_DIR}/lib/jake:
 
 # Copy things to dist dir
 .PHONY: bootstrap-deps
-bootstrap-deps: alldirs ${BOOTSTRAP_DIR}/bin/monkeyscript ${BOOTSTRAP_DIR}/lib/js.jar ${BOOTSTRAP_DIR}/lib/jline.jar dist-dep-banana dist-dep-jake ${BOOTSTRAP_DIR}/lib/monkeyscriptrc.js ${BOOTSTRAP_DIR}/lib/lint.js ${BOOTSTRAP_DIR}/lib/repl.js
+bootstrap-deps: alldirs ${BOOTSTRAP_DIR}/bin/monkeyscript ${BOOTSTRAP_DIR}/lib/js.jar ${BOOTSTRAP_DIR}/lib/jline.jar dist-dep-banana dist-dep-jake ${BOOTSTRAP_DIR}/lib/monkeyscriptrc.js
 ${BOOTSTRAP_DIR}/bin/monkeyscript: ${BOOTSTRAP_DIR}/bin ${SRC_DIR}/common/monkeyscript.bootstrap.sh
 	cp ${SRC_DIR}/common/monkeyscript.bootstrap.sh ${BOOTSTRAP_DIR}/bin/monkeyscript
 	-chmod +x ${BOOTSTRAP_DIR}/bin/monkeyscript
@@ -74,10 +69,6 @@ ${BOOTSTRAP_DIR}/lib/jline.jar: ${BOOTSTRAP_DIR}/lib ${LIB_DIR}/jline-0.9.94.jar
 	cp ${LIB_DIR}/jline-0.9.94.jar ${BOOTSTRAP_DIR}/lib/jline.jar
 ${BOOTSTRAP_DIR}/lib/monkeyscriptrc.js: ${SRC_DIR}/common/monkeyscriptrc.js
 	cp ${SRC_DIR}/common/monkeyscriptrc.js ${BOOTSTRAP_DIR}/lib/
-${BOOTSTRAP_DIR}/lib/lint.js: ${SRC_DIR}/common/lint.js
-	cp ${SRC_DIR}/common/lint.js ${BOOTSTRAP_DIR}/lib/
-${BOOTSTRAP_DIR}/lib/repl.js: ${SRC_DIR}/common/repl.js
-	cp ${SRC_DIR}/common/repl.js ${BOOTSTRAP_DIR}/lib/
 ## Banana
 .PHONY: dist-dep-banana
 dist-dep-banana: $(BANANA_FILES) ${BOOTSTRAP_DIR}/bin/banana
@@ -99,13 +90,9 @@ ${BOOTSTRAP_DIR}/bin/jake: ${BOOTSTRAP_DIR}/bin ${SRC_DIR}/jake/jake
 
 ## CommonJS modules
 .PHONY: commonjs
-commonjs: ${MODULE_BOOT} $(MODULE_FILES) ${MODULE_BOOT}/io/buffer.jar ${MODULE_BOOT}/repl.jar
+commonjs: jake-bootstrap ${MODULE_BOOT} ${MODULE_BOOT}/io/buffer.jar ${MODULE_BOOT}/repl.jar
 ${MODULE_BOOT}:
 	@@mkdir -p ${MODULE_BOOT}
-$(MODULE_FILES): ${MODULE_BOOT}/% : ${MODULE_SRC}/% ${MODULE_BOOT}
-	@@echo "Copying commonjs module file ${MODULE_SRC}/$(*D)/$(*F) to ${MODULE_BOOT}/"
-	-mkdir -p ${MODULE_BOOT}/$(*D)
-	@@cp ${MODULE_SRC}/$(*D)/$(*F) ${MODULE_BOOT}/$(*D)
 ${MODULE_BOOT}/io/buffer.jar: ${SRC_DIR}/commonjs/buffer/build/io/buffer.jar
 	-mkdir -p ${MODULE_BOOT}/io/
 	cp ${SRC_DIR}/commonjs/buffer/build/io/buffer.jar ${MODULE_BOOT}/io/

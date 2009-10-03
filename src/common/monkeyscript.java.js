@@ -282,5 +282,9 @@ async.pending = function(fn) {
 };
 // For now do this since .seal appears to be broken
 Object.realSeal = Object.seal;
-Object.seal = function nonSeal(o) { return o; }
+Object.seal = function nonSeal(o) { return o; };
+// JSON.parse's trailing newline bug has also reappeared
+(function(json_parse) {
+	JSON.parse = function parse(json) { return json_parse(json.trim()) };
+})(JSON.parse);
 

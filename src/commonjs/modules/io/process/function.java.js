@@ -30,8 +30,13 @@ function ProcessFunction(executable) {
 	// @todo Develop lang.javascript.xobject and use that to have full control over instanceof, etc...
 	function exe() {
 		// We're going to lazily be rhino dependent until we write the actual Process object
-		var cmd = [executable].concat(Array.slice(arguments)).toJavaArray(java.lang.String);
-		var p = java.lang.Runtime.getRuntime().exec(cmd, null, new java.io.File(Kernel.currentWorkingDirectory));
+		var options = {};
+		var args = Array.slice(arguments);
+		if ( isObject(args[0]) ) {
+			options = args.shift();
+		}
+		var cmd = [executable].concat(args).toJavaArray(java.lang.String);
+		var p = java.lang.Runtime.getRuntime().exec(cmd, null, new java.io.File(options.directory||Kernel.currentWorkingDirectory));
 		var exit = p.waitFor();
 		var o = {
 			exit: exit,
